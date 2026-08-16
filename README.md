@@ -27,7 +27,7 @@ package.json       dsh.client 声明(web 平台)与导出
 
 ```bash
 # 1. 克隆到本机主题目录
-git clone https://github.com/<your-name>/dsh-theme-wanderer.git ~/.dsh/themes/dsh-theme-wanderer
+git clone https://github.com/yumonai/dsh-theme-wanderer.git ~/.dsh/themes/dsh-theme-wanderer
 
 # 2. 在 web profile 中以 link: 协议安装(符号链接,改源码即时生效)
 cd ~/.dsh/profiles/web
