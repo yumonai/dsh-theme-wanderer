@@ -1,0 +1,19 @@
+{
+  "name": "dsh-theme-wanderer",
+  "description": "DeepSeek Harness《原神》流浪者「久世浮倾」主题：全透明界面壁纸直出、风元素粒子、神之眼符号、浪客座命座视觉包装。",
+  "version": "2.0.0",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "dsh": {
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./package.json": "./package.json"
+  }
+}
