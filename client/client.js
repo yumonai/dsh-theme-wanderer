@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true },
+			prefs: { video: true, stars: true, frame: true, ribbons: true },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -38,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.15.1'
+		const THEME_VERSION = '3.16.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -52,7 +52,9 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 				'--dsw-alias-bg-base': { light: 'rgba(250, 252, 255, 0.03)', dark: 'rgba(6, 10, 20, 0.05)' },
 				'--dsw-alias-bg-layer-1': { light: 'rgba(255, 255, 255, 0.42)', dark: 'rgba(16, 27, 46, 0.36)' },
 				'--dsw-alias-bg-layer-2': { light: 'rgba(248, 251, 255, 0.34)', dark: 'rgba(22, 36, 58, 0.30)' },
-				'--dsw-alias-bg-overlay': { light: 'rgba(244, 248, 253, 0.88)', dark: 'rgba(14, 24, 42, 0.88)' },
+				'--dsw-alias-bg-overlay': { light: 'rgba(246, 250, 255, 0.62)', dark: 'rgba(12, 20, 36, 0.66)' },
+				'--dsw-specific-menu': { light: 'rgba(255, 255, 255, 0.16)', dark: 'rgba(12, 20, 34, 0.34)' },
+				'--dsw-menu-backdrop-filter': { light: 'blur(14px) saturate(185%) brightness(1.05)', dark: 'blur(14px) saturate(170%) brightness(1.02)' },
 				'--dsw-alias-border-l1': { light: 'rgba(255, 255, 255, 0.50)', dark: 'rgba(255, 255, 255, 0.08)' },
 				'--dsw-alias-border-l2': { light: 'rgba(168, 138, 82, 0.50)', dark: 'rgba(212, 175, 106, 0.36)' },
 				'--dsw-alias-brand-primary': { light: '#2f93c4', dark: '#6fc3e8' },
@@ -122,8 +124,8 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 /* 主对话列: 只保留极轻的玻璃——几乎透明,文字清晰优先 */
 [class*="centerCol"] {
   position: relative;
-  -webkit-backdrop-filter: blur(2.5px) saturate(140%) brightness(1.01);
-  backdrop-filter: blur(2.5px) saturate(140%) brightness(1.01);
+  -webkit-backdrop-filter: blur(1.5px) saturate(135%) brightness(1.01);
+  backdrop-filter: blur(1.5px) saturate(135%) brightness(1.01);
   overflow: hidden;
 }
 
@@ -210,6 +212,24 @@ body[data-ds-dark-theme] [class*="centerCol"]::after {
   100% { background-position: 0 0, -120% 0, 0 0; }
 }
 
+/* ===== 次级界面(设置/弹窗/菜单/面板): 与侧栏同款玻璃边缘光影 ===== */
+[class*="_dialog"], [class*="_panel"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.20),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
+    0 16px 48px rgba(8, 16, 30, 0.22);
+}
+body[data-ds-dark-theme] [class*="_dialog"],
+body[data-ds-dark-theme] [class*="_panel"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
+    0 16px 48px rgba(0, 0, 0, 0.40);
+}
+
 /* 青绸滚动条 */
 * { scrollbar-color: #5aa9c6 rgba(18, 30, 52, 0.22); scrollbar-width: thin; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -255,7 +275,6 @@ body[data-ds-dark-theme] [class*="centerCol"]::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
-.wt-wind { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }
 
 /* ===== 卷轴边框 ===== */
 .wt-frame {
@@ -284,12 +303,6 @@ body[data-ds-dark-theme] .wt-title-sub { color: rgba(233, 214, 178, 0.7); }
 .wt-divider::before, .wt-divider::after { content: ""; position: absolute; top: 50%; width: 8px; height: 8px; transform: translateY(-50%) rotate(45deg); background: rgba(232, 200, 122, 0.95); }
 .wt-divider::before { left: -2px; }
 .wt-divider::after { right: -2px; }
-
-/* ===== 风语题签 ===== */
-.wt-dock { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 2px 0 3px; opacity: 0.7; pointer-events: none; color: #3a4a5e; font-size: 12px; letter-spacing: 0.3em; }
-body[data-ds-dark-theme] .wt-dock { color: rgba(244, 239, 228, 0.85); }
-.wt-dock .wt-spiral { animation: wt-spin 9s linear infinite; }
-@keyframes wt-spin { to { transform: rotate(360deg); } }
 
 /* ===== 设置页 ===== */
 .wt-settings { display: flex; flex-direction: column; gap: 2px; }
@@ -523,13 +536,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				)
 			})
 
-			slotsSvc.inject('conversation.composer.dock', function () {
-				return slotsSvc.register(
-					{ name: 'conversation.composer.dock', id: 'wanderer-dock', order: 10, label: '风语签' },
-					function () { return React.createElement(DockFlourish) },
-				)
-			})
-
 			console.log('[dsh-theme-wanderer] v' + THEME_VERSION + ' 已挂载: 液态玻璃 + 动态壁纸')
 			;(function bootCheck() {
 				/* 一次性挂载回执: 只发一条,便于确认前端已挂载且壁纸在播;不做周期上报 */
@@ -599,152 +605,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				return React.createElement('div', { className: 'wt-divider', 'aria-hidden': true })
 			}
 
-			/* ===== 风元素粒子画布 ===== */
-			function drawStar(c2d, x, y, r, rot, color) {
-				c2d.beginPath()
-				for (let i = 0; i < 8; i++) {
-					const ang = rot + (i * Math.PI) / 4
-					const rad = i % 2 === 0 ? r : r * 0.3
-					const px = x + Math.cos(ang) * rad
-					const py = y + Math.sin(ang) * rad
-					if (i === 0) { c2d.moveTo(px, py) } else { c2d.lineTo(px, py) }
-				}
-				c2d.closePath()
-				c2d.fillStyle = color
-				c2d.fill()
-			}
-			function WindCanvas() {
-				let canvasEl = null
-				React.useEffect(function () {
-					const canvas = canvasEl
-					if (!canvas) return undefined
-					const c2d = canvas.getContext('2d')
-					if (!c2d) return undefined
-					const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-					if (reduceMotion) return undefined
-
-					const COLORS = ['103, 195, 232', '232, 200, 122', '155, 123, 212', '214, 236, 248']
-					const parts = []
-					let w = 0
-					let h = 0
-					let dpr = 1
-
-					function seed(p, fromRight) {
-						const cw = canvas.clientWidth || 800
-						const ch = canvas.clientHeight || 600
-						p.kind = Math.random() < 0.2 ? 'star' : 'mote'
-						p.x = fromRight ? cw + 20 + Math.random() * 160 : Math.random() * cw
-						p.y = Math.random() * ch
-						p.anchor = p.y
-						p.r = 0.6 + Math.random() * 1.7
-						p.vx = 0.3 + Math.random() * 1.1
-						p.amp = 10 + Math.random() * 30
-						p.freq = 0.004 + Math.random() * 0.008
-						p.phase = Math.random() * Math.PI * 2
-						p.spin = Math.random() * Math.PI * 2
-						p.spinV = (Math.random() - 0.5) * 0.05
-						p.color = COLORS[(Math.random() * COLORS.length) | 0]
-					}
-					for (let i = 0; i < 60; i++) { const p = {}; seed(p, false); parts.push(p) }
-					for (let i = 0; i < 6; i++) {
-						const p = {}
-						seed(p, false)
-						p.kind = 'spiral'
-						p.orbit = 8 + Math.random() * 14
-						p.theta = Math.random() * Math.PI * 2
-						p.orbitV = 0.012 + Math.random() * 0.02
-						p.ax = p.x
-						p.ay = p.y
-						parts.push(p)
-					}
-					for (let i = 0; i < 4; i++) {
-						const p = {}
-						seed(p, false)
-						p.kind = 'gust'
-						p.len = 60 + Math.random() * 110
-						p.vx = 1.6 + Math.random() * 1.6
-						parts.push(p)
-					}
-
-					function tick() {
-						const cw = canvas.clientWidth || 800
-						const ch = canvas.clientHeight || 600
-						if (cw !== w || ch !== h) {
-							w = cw
-							h = ch
-							dpr = (window.devicePixelRatio) || 1
-							canvas.width = Math.max(1, Math.round(cw * dpr))
-							canvas.height = Math.max(1, Math.round(ch * dpr))
-						}
-						c2d.setTransform(dpr, 0, 0, dpr, 0, 0)
-						c2d.clearRect(0, 0, w, h)
-						for (let i = 0; i < parts.length; i++) {
-							const p = parts[i]
-							if (p.kind === 'gust') {
-								p.x -= p.vx
-								if (p.x + p.len < -10) { seed(p, true); p.kind = 'gust' }
-								const g = c2d.createLinearGradient(p.x - p.len, p.y, p.x, p.y)
-								g.addColorStop(0, 'rgba(' + p.color + ',0)')
-								g.addColorStop(0.5, 'rgba(' + p.color + ',0.16)')
-								g.addColorStop(1, 'rgba(' + p.color + ',0)')
-								c2d.strokeStyle = g
-								c2d.lineWidth = 1.4
-								c2d.beginPath()
-								c2d.moveTo(p.x - p.len, p.y)
-								c2d.lineTo(p.x, p.y)
-								c2d.stroke()
-								continue
-							}
-							if (p.kind === 'spiral') {
-								p.theta += p.orbitV
-								p.ax -= p.vx * 0.6
-								if (p.ax < -40) { seed(p, true); p.kind = 'spiral'; p.ax = p.x; p.ay = p.y }
-								const sx = p.ax + Math.cos(p.theta) * p.orbit
-								const sy = p.ay + Math.sin(p.theta) * p.orbit * 0.7
-								const a = 'rgba(' + p.color + ','
-								c2d.fillStyle = a + '0.12)'
-								c2d.beginPath()
-								c2d.arc(sx, sy, p.r * 2.6, 0, Math.PI * 2)
-								c2d.fill()
-								c2d.fillStyle = a + '0.8)'
-								c2d.beginPath()
-								c2d.arc(sx, sy, p.r * 0.9, 0, Math.PI * 2)
-								c2d.fill()
-								continue
-							}
-							p.phase += p.freq * 2.2
-							p.spin += p.spinV
-							p.x -= p.vx
-							const y = p.anchor + Math.sin(p.phase) * p.amp
-							if (p.x < -24) { seed(p, true) }
-							const a = 'rgba(' + p.color + ','
-							c2d.fillStyle = a + '0.14)'
-							c2d.beginPath()
-							c2d.arc(p.x, y, p.r * 3.4, 0, Math.PI * 2)
-							c2d.fill()
-							if (p.kind === 'star') {
-								drawStar(c2d, p.x, y, p.r * 2.6, p.spin, a + '0.9)')
-								drawStar(c2d, p.x, y, p.r * 1.05, p.spin + Math.PI / 4, a + '0.75)')
-							} else {
-								c2d.fillStyle = a + '0.85)'
-								c2d.beginPath()
-								c2d.arc(p.x, y, p.r, 0, Math.PI * 2)
-								c2d.fill()
-							}
-						}
-					}
-
-					let raf = 0
-					function loop() {
-						tick()
-						raf = window.requestAnimationFrame(loop)
-					}
-					raf = window.requestAnimationFrame(loop)
-					return function () { window.cancelAnimationFrame(raf) }
-				}, [])
-				return React.createElement('canvas', { ref: function (el) { canvasEl = el }, className: 'wt-wind', 'aria-hidden': true })
-			}
-
 			/* ===== 卷轴边框 ===== */
 			function FrameBorder() {
 				return React.createElement('div', { className: 'wt-frame', 'aria-hidden': true },
@@ -768,17 +628,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						React.createElement('span', { className: 'wt-edge-line' }),
 						React.createElement('span', { className: 'wt-edge-tassel' }),
 					),
-				)
-			}
-
-			/* ===== 风语题签 ===== */
-			function DockFlourish() {
-				const prefs = wtUsePrefs()
-				if (!prefs.dock) return null
-				return React.createElement('div', { className: 'wt-dock', 'aria-hidden': true },
-					React.createElement(Spiral, { size: 12 }),
-					React.createElement('span', null, '风随旅人 · 语落如羽'),
-					React.createElement(Spiral, { size: 12 }),
 				)
 			}
 
@@ -865,10 +714,8 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				const ITEMS = [
 					['video', '动态壁纸', '视频壁纸(关闭后使用静态海报)'],
 					['stars', '星空星尘', '壁纸上的闪烁星尘'],
-					['wind', '风元素粒子', '流动的风之微尘 · 四芒星 · 螺旋 · 风痕'],
 					['frame', '卷轴边框', '全屏鎏金卷轴边框与八瓣金莲角饰'],
 					['ribbons', '绸带滚边', '左右紫色绳穗与青绸装饰线'],
-					['dock', '风语题签', '输入框下方的风语装饰'],
 				]
 				const rows = ITEMS.map(function (item) {
 					return React.createElement(Toggle, {
@@ -904,7 +751,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					React.createElement('div', { className: 'wt-grain', 'aria-hidden': true }),
 					prefs.stars ? React.createElement('div', { className: 'wt-stars wt-stars-1', 'aria-hidden': true }) : null,
 					prefs.stars ? React.createElement('div', { className: 'wt-stars wt-stars-2', 'aria-hidden': true }) : null,
-					prefs.wind ? React.createElement(WindCanvas) : null,
 					prefs.frame ? React.createElement(FrameBorder) : null,
 					prefs.ribbons ? React.createElement(RibbonEdges) : null,
 				)
