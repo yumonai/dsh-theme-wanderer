@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true, refract: false, battop: false },
+			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -16,8 +16,6 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 		function wtSetPref(key, value) {
 			wtStore.prefs[key] = !!value
 			if (key === 'video') wtApplyVideoPref()
-			if (key === 'refract') document.body.classList.toggle('wt-refract-on', !!wtStore.prefs.refract)
-			if (key === 'battop') document.body.classList.toggle('wt-bg-on-top', !!wtStore.prefs.battop)
 			wtStore.prefsListeners.forEach(function (fn) { fn() })
 		}
 		function wtTogglePref(key) { wtSetPref(key, !wtStore.prefs[key]) }
@@ -40,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.14.0'
+		const THEME_VERSION = '3.15.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -97,9 +95,6 @@ body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 10
 body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
 
-/* ===== 壁纸置顶(诊断): 把背景层提到最上层,用于判断是否被应用层遮挡 ===== */
-body.wt-bg-on-top .wt-bgmedia { z-index: 99999 !important; }
-
 /* ===== 动态壁纸 Canvas(逐帧绘制,规避视频层合成问题) ===== */
 .wt-bgcanvas { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; }
 
@@ -117,38 +112,45 @@ body.wt-bg-on-top .wt-bgmedia { z-index: 99999 !important; }
 }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
-/* ===== 主界面: 完全透明(壁纸清晰可见) + 液态玻璃边缘光影 ===== */
-[class*="centerCol"] {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
+/* ===== 液态玻璃: 主界面与侧栏统一(低模糊 + 高饱和 + 镜面高光 + 色散边) ===== */
+[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"], [class*="centerCol"] {
   position: relative;
-  backdrop-filter: blur(1.5px) saturate(130%);
-  -webkit-backdrop-filter: blur(1.5px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   overflow: hidden;
 }
+/* 主对话列稍轻,保证正文可读 */
+[class*="centerCol"] {
+  -webkit-backdrop-filter: blur(9px) saturate(165%) brightness(1.03);
+  backdrop-filter: blur(9px) saturate(165%) brightness(1.03);
+}
+
 body:not([data-ds-dark-theme]) [class*="sidebarCol"],
 body:not([data-ds-dark-theme]) [class*="rightbarCol"],
-body:not([data-ds-dark-theme]) [class*="bottomRow"] {
-  background: rgba(255, 255, 255, 0.05) !important;
+body:not([data-ds-dark-theme]) [class*="bottomRow"],
+body:not([data-ds-dark-theme]) [class*="centerCol"] {
+  background: rgba(255, 255, 255, 0.10) !important;
   box-shadow:
-    inset 0 0 2px 1px rgba(255, 255, 255, 0.40),
-    inset 0 0 10px 4px rgba(255, 255, 255, 0.14),
-    inset 0 4px 16px rgba(20, 40, 70, 0.05),
-    inset 0 8px 24px rgba(20, 40, 70, 0.05),
-    inset 1px 0 0 rgba(255, 255, 255, 0.45);
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),          /* 顶部镜面高光 */
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),        /* 内侧薄边 */
+    inset 0 -1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.22),      /* 冷色色散边(蓝) */
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.10),      /* 暖色色散边(金) */
+    inset 0 0 28px rgba(255, 255, 255, 0.10),
+    0 10px 40px rgba(8, 16, 30, 0.16);                /* 外侧投影,制造厚度 */
 }
 body[data-ds-dark-theme] [class*="sidebarCol"],
 body[data-ds-dark-theme] [class*="rightbarCol"],
-body[data-ds-dark-theme] [class*="bottomRow"] {
-  background: rgba(4, 8, 16, 0.07) !important;
+body[data-ds-dark-theme] [class*="bottomRow"],
+body[data-ds-dark-theme] [class*="centerCol"] {
+  background: rgba(10, 18, 32, 0.14) !important;
   box-shadow:
-    inset 0 0 2px 1px rgba(255, 255, 255, 0.16),
-    inset 0 0 10px 4px rgba(255, 255, 255, 0.06),
-    inset 0 4px 16px rgba(0, 0, 0, 0.06),
-    inset 1px 0 0 rgba(255, 255, 255, 0.10);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.18),
+    inset 0 0 0 2.5px rgba(232, 200, 122, 0.10),
+    inset 0 0 30px rgba(120, 180, 255, 0.06),
+    0 10px 40px rgba(0, 0, 0, 0.35);
 }
 html[data-platform=darwin] [class*="sidebarCol"],
 html[data-platform=darwin] [class*="centerCol"],
@@ -156,32 +158,39 @@ html[data-platform=darwin] [class*="rightbarCol"],
 html[data-platform=darwin] [class*="bottomRow"] {
   background-image: none !important;
 }
-/* 玻璃边缘: 斜向镜面反光 + 顶部光带(伪元素叠加) */
+/* 玻璃面上的流光: 斜向高光带缓慢扫过 + 顶部光晕(肉眼可见的"液面"感) */
 [class*="sidebarCol"]::after,
 [class*="rightbarCol"]::after,
-[class*="bottomRow"]::after {
+[class*="bottomRow"]::after,
+[class*="centerCol"]::after {
   content: "";
   position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
-    linear-gradient(145deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 16%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.08) 100%),
-    radial-gradient(90% 26% at 50% -4%, rgba(255,255,255,0.28), rgba(255,255,255,0) 70%);
-  opacity: 0.8;
+    radial-gradient(120% 55% at 10% -6%, rgba(255,255,255,0.30), rgba(255,255,255,0) 62%),
+    linear-gradient(112deg, rgba(255,255,255,0) 34%, rgba(255,255,255,0.16) 46%, rgba(255,255,255,0) 58%),
+    linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 30%);
+  background-size: 100% 100%, 260% 100%, 100% 100%;
+  background-position: 0 0, -120% 0, 0 0;
+  animation: wt-glass-flow 11s ease-in-out infinite;
+  opacity: 0.9;
 }
 body[data-ds-dark-theme] [class*="sidebarCol"]::after,
 body[data-ds-dark-theme] [class*="rightbarCol"]::after,
-body[data-ds-dark-theme] [class*="bottomRow"]::after {
+body[data-ds-dark-theme] [class*="bottomRow"]::after,
+body[data-ds-dark-theme] [class*="centerCol"]::after {
   background:
-    linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 16%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.05) 100%),
-    radial-gradient(90% 26% at 50% -4%, rgba(255,255,255,0.16), rgba(255,255,255,0) 70%);
-  opacity: 0.7;
+    radial-gradient(120% 55% at 10% -6%, rgba(160,210,255,0.18), rgba(255,255,255,0) 62%),
+    linear-gradient(112deg, rgba(255,255,255,0) 34%, rgba(200,230,255,0.10) 46%, rgba(255,255,255,0) 58%),
+    linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 30%);
+  background-size: 100% 100%, 260% 100%, 100% 100%;
+  background-position: 0 0, -120% 0, 0 0;
+  animation: wt-glass-flow 13s ease-in-out infinite;
+  opacity: 0.85;
 }
-
-/* ===== 光学折射(实验): SVG 位移滤镜,支持时产生真实边缘折射 ===== */
-body.wt-refract-on [class*="sidebarCol"],
-body.wt-refract-on [class*="rightbarCol"],
-body.wt-refract-on [class*="bottomRow"] {
-  backdrop-filter: url(#wt-liquid-glass) blur(0.4px) saturate(140%);
-  -webkit-backdrop-filter: url(#wt-liquid-glass) blur(0.4px) saturate(140%);
+@keyframes wt-glass-flow {
+  0%   { background-position: 0 0, -120% 0, 0 0; }
+  55%  { background-position: 0 0, 120% 0, 0 0; }
+  100% { background-position: 0 0, -120% 0, 0 0; }
 }
 
 /* 青绸滚动条 */
@@ -321,26 +330,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				disposers.push(function () { try { styleEl.remove() } catch (err) {} })
 
 				{
-					/* 光学折射滤镜(SVG 位移): 供 backdrop-filter: url() 使用; 不支持的环境自动忽略 */
-				const svgNS = 'http://www.w3.org/2000/svg'
-				const svg = document.createElementNS(svgNS, 'svg')
-				svg.setAttribute('width', '0')
-				svg.setAttribute('height', '0')
-				svg.setAttribute('aria-hidden', 'true')
-				svg.style.position = 'absolute'
-				svg.style.width = '0'
-				svg.style.height = '0'
-				svg.style.overflow = 'hidden'
-				svg.innerHTML = '<defs><filter id="wt-liquid-glass" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">'
-					+ '<feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="1" seed="11" result="noise"/>'
-					+ '<feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G" result="disp"/>'
-					+ '<feGaussianBlur in="disp" stdDeviation="0.4"/>'
-					+ '</filter></defs>'
-				document.body.appendChild(svg)
-				disposers.push(function () { try { svg.remove() } catch (err) {} })
-				document.body.classList.toggle('wt-refract-on', !!wtStore.prefs.refract)
-
-				const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+	const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 					const wrap = document.createElement('div')
 					wrap.className = 'wt-bgmedia'
 					const video = document.createElement('video')
@@ -426,26 +416,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					wtStore.videoEl = video
 					wtStore.mediaWrap = wrap
 
-					/* 把浏览器内的真实播放状态回传到 Host 终端,便于远端诊断 */
-					let reports = 0
-					function report(tag) {
-						if (reports > 8) return
-						reports++
-						try {
-							const st = 'evt=' + tag
-								+ ' err=' + (video.error ? video.error.code : 0)
-								+ ' rs=' + video.readyState
-								+ ' ns=' + video.networkState
-								+ ' paused=' + video.paused
-								+ ' t=' + (Math.round(video.currentTime * 10) / 10)
-								+ ' reducedMotion=' + reduceMotion
-								+ ' seek=' + video.seeking
-								+ ' buf=' + (video.buffered && video.buffered.length ? (Math.round(video.buffered.end(video.buffered.length - 1) * 10) / 10) : 0)
-								+ ' frames=' + ((video.getVideoPlaybackQuality && video.getVideoPlaybackQuality().totalVideoFrames) || video.webkitDecodedFrameCount || 'n/a')
-								+ ' w=' + Math.round(video.getBoundingClientRect().width) + 'x' + Math.round(video.getBoundingClientRect().height)
-							fetch('/wanderer-theme/clientlog?video ' + encodeURIComponent(st), { cache: 'no-store' }).catch(function () {})
-						} catch (err) {}
-					}
 					function tryPlay() {
 						try {
 							const p = video.play()
@@ -455,9 +425,9 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						} catch (err) {}
 					}
 					;['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'playing', 'waiting', 'stalled'].forEach(function (ev) {
-						video.addEventListener(ev, function () { if (ev === 'playing') report('playing'); if (video.paused) tryPlay() })
+						video.addEventListener(ev, function () { if (video.paused) tryPlay() })
 					})
-					video.addEventListener('error', function () { report('error'); console.error('[dsh-theme-wanderer] 视频元素错误:', video.error && video.error.code) })
+					video.addEventListener('error', function () { console.error('[dsh-theme-wanderer] 视频元素错误:', video.error && video.error.code) })
 					if (document.pictureInPictureElement === video && document.exitPictureInPicture) {
 						try { document.exitPictureInPicture() } catch (err) {}
 					}
@@ -502,125 +472,9 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					const hintTimer = window.setInterval(syncHint, 1200)
 					disposers.push(function () { window.clearInterval(hintTimer); try { hint.remove() } catch (err) {} })
 
-					/* 抽帧比对: 判断视频是否真的在动(区分解码失败与遮挡) */
-					let lastHash = -1
-					let motion = 'pending'
-					try {
-						const probe = document.createElement('canvas')
-						probe.width = 8
-						probe.height = 8
-						const pctx = probe.getContext('2d', { willReadFrequently: true })
-						let lastTime = -1
-						let stalls = 0
-						let recovered = 0
-						const motionTimer = window.setInterval(function () {
-							try {
-								pctx.drawImage(video, 0, 0, 8, 8)
-								const d = pctx.getImageData(0, 0, 8, 8).data
-								let h = 0
-								for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0
-								if (lastHash >= 0) motion = h !== lastHash ? 'moving' : 'frozen'
-								lastHash = h
-								// 卡帧自愈: 时间不走且未暂停 → 重新载入并播放
-								const t = Math.round(video.currentTime * 10) / 10
-								if (!video.paused) {
-									if (t === lastTime) stalls++
-									else stalls = 0
-									lastTime = t
-									if (stalls >= 2 && recovered < 3) {
-										recovered++
-										report('stall-recovery#' + recovered)
-										try { video.load(); video.play().catch(function () {}) } catch (err) {}
-									}
-								}
-							} catch (err) { motion = 'probe-failed' }
-						}, 1500)
-						disposers.push(function () { window.clearInterval(motionTimer) })
-					} catch (err) {}
-
-					/* canvas 像素指纹: 判断"画布内容是否在更新"(与用户所见无关的客观证据) */
-					function canvasHash() {
-						try {
-							if (!cctx || !canvas) return 'canvas-disabled'
-							const w = canvas.width
-							const h = canvas.height
-							if (!w || !h) return 'empty'
-							const d = cctx.getImageData(Math.max(0, Math.floor(w / 2) - 8), Math.max(0, Math.floor(h / 2) - 8), 16, 16).data
-							let sum = 0
-							for (let i = 0; i < d.length; i += 4) sum = (sum * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0
-							return String(sum)
-						} catch (err) { return 'err:' + ((err && err.name) || err) }
-					}
-					let hashA = null
-					let hashB = null
-					window.setTimeout(function () { hashA = canvasHash() }, 2500)
-					window.setTimeout(function () { hashB = canvasHash() }, 6500)
-
-					/* 四角探针: 找出压在最上层的元素(含背景/滤镜/z-index) */
-					function probeOccluders() {
-						try {
-							const pts = [[0.08, 0.08], [0.92, 0.08], [0.08, 0.92], [0.92, 0.92], [0.5, 0.5]]
-							const out = []
-							for (const p of pts) {
-								const x = Math.round(window.innerWidth * p[0])
-								const y = Math.round(window.innerHeight * p[1])
-								const el = document.elementFromPoint(x, y)
-								if (!el) { out.push(p.join(',') + '=null'); continue }
-								const cs = getComputedStyle(el)
-								out.push(p.join(',') + '=' + (el.tagName || '?') + '.' + (String(el.className || '').split(' ')[0] || '-').slice(0, 22)
-									+ '/bg:' + cs.backgroundColor + '/bf:' + (cs.backdropFilter || cs.webkitBackdropFilter || 'none') + '/z:' + cs.zIndex)
-							}
-							const layers = document.querySelectorAll('.wt-bgmedia')
-							out.push('layers=' + layers.length + '[' + Array.prototype.map.call(layers, function (l) {
-								const r = l.getBoundingClientRect()
-								return Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height)
-							}).join(';') + '] videos=' + document.querySelectorAll('.wt-bgvideo').length + ' canvases=' + document.querySelectorAll('.wt-bgcanvas').length + ' posters=' + document.querySelectorAll('.wt-bgposter').length)
-							const media = document.querySelector('.wt-bgmedia')
-							const mcs = media ? getComputedStyle(media) : null
-							out.push('canvas=' + (canvas ? (canvas.width + 'x' + canvas.height) : 'n/a') + ' drawErr=' + drawErr
-								+ ' hashA=' + hashA + ' hashB=' + hashB
-								+ ' mediaZ=' + (mcs ? mcs.zIndex : 'n/a') + ' mediaOp=' + (mcs ? mcs.opacity : 'n/a')
-								+ ' onTop=' + document.body.classList.contains('wt-bg-on-top'))
-							fetch('/wanderer-theme/clientlog?occl ' + encodeURIComponent(out.join(' | ')), { cache: 'no-store' }).catch(function () {})
-						} catch (err) {}
-					}
-					window.setTimeout(probeOccluders, 8000)
-
-					/* 媒体元素清点: 列出页面上所有 video/canvas/img/iframe 的位置与尺寸,定位"多出来的壁纸" */
-					window.setTimeout(function () {
-						try {
-							const items = []
-							const all = document.querySelectorAll('video, canvas, img, iframe')
-							for (let i = 0; i < all.length && i < 14; i++) {
-								const el = all[i]
-								const r = el.getBoundingClientRect()
-								let src = ''
-								try { src = String(el.currentSrc || el.src || '') } catch (err) {}
-								items.push(el.tagName + '[' + Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height) + ']'
-									+ 'cls=' + (String(el.className || '').slice(0, 18) || '-')
-									+ 'src=' + (src ? src.replace(/^https?:\/\/[^/]+/, '').slice(0, 34) : '-')
-									+ 'inWrap=' + (el.closest && el.closest('.wt-bgmedia') ? 'Y' : 'N'))
-							}
-							const pts = [[0.15, 0.18], [0.30, 0.10]]
-							const stack = []
-							for (const p of pts) {
-								const x = Math.round(window.innerWidth * p[0])
-								const y = Math.round(window.innerHeight * p[1])
-								const top = document.elementsFromPoint ? document.elementsFromPoint(x, y).slice(0, 4) : []
-								stack.push(p.join(',') + '=' + top.map(function (e) {
-									const r = e.getBoundingClientRect()
-									return (e.tagName || '?') + '.' + (String(e.className || '').split(' ')[0] || '-').slice(0, 16)
-										+ '[' + Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height) + ']'
-								}).join(' > '))
-							}
-							fetch('/wanderer-theme/clientlog?media ver=' + THEME_VERSION + ' layers=' + document.querySelectorAll('.wt-bgmedia').length
-								+ ' || ' + items.join(' || ') + ' || ' + stack.join(' || '), { cache: 'no-store' }).catch(function () {})
-						} catch (err) {}
-					}, 11000)
-
 					tryPlay()
-					window.setTimeout(function () { report('t+3s motion=' + motion); syncHint() }, 3000)
-					window.setTimeout(function () { report('t+9s motion=' + motion); syncHint() }, 9000)
+					window.setTimeout(syncHint, 3000)
+					window.setTimeout(syncHint, 9000)
 					disposers.push(function () {
 						try { video.pause() } catch (err) {}
 						try { video.removeAttribute('src') } catch (err) {}
@@ -659,15 +513,16 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				)
 			})
 
-			console.log('[dsh-theme-wanderer] v' + THEME_VERSION + ' 已挂载: 透明玻璃 + 动态壁纸视频')
+			console.log('[dsh-theme-wanderer] v' + THEME_VERSION + ' 已挂载: 液态玻璃 + 动态壁纸')
 			;(function bootCheck() {
-				try {
-					fetch('/wanderer-theme/wallpaper-video', { method: 'HEAD' }).then(function (r) {
-						console.log('[dsh-theme-wanderer] 动态壁纸自检 HTTP', r.status, r.headers.get('content-type') || '', r.headers.get('content-length') || '')
-					}).catch(function (e) {
-						console.error('[dsh-theme-wanderer] 动态壁纸自检失败:', e)
-					})
-				} catch (err) {}
+				/* 一次性挂载回执: 只发一条,便于确认前端已挂载且壁纸在播;不做周期上报 */
+				window.setTimeout(function () {
+					try {
+						const v = wtStore.videoEl
+						const state = v ? (v.error ? 'error' + v.error.code : (v.paused ? 'paused' : 'playing')) : 'none'
+						fetch('/wanderer-theme/clientlog?' + encodeURIComponent('mount v' + THEME_VERSION + ' video=' + state), { cache: 'no-store' }).catch(function () {})
+					} catch (err) {}
+				}, 3500)
 			})()
 
 			/* ===== 基础形状 ===== */
@@ -899,24 +754,13 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				)
 			}
 
-			/* ===== 风语题签(含页面心跳: 视频实时用时,可判断页面是否新版/在动) ===== */
+			/* ===== 风语题签 ===== */
 			function DockFlourish() {
 				const prefs = wtUsePrefs()
-				const [beat, setBeat] = React.useState('t=…')
-				React.useEffect(function () {
-					const timer = setInterval(function () {
-						const v = wtStore.videoEl
-						if (!v) { setBeat('无视频'); return }
-						const t = Math.round((v.currentTime || 0) * 10) / 10
-						const rs = v.readyState
-						setBeat((v.paused ? '暂停' : rs >= 3 ? '▶' : '缓冲') + ' t=' + t + 's')
-					}, 700)
-					return function () { clearInterval(timer) }
-				}, [])
 				if (!prefs.dock) return null
 				return React.createElement('div', { className: 'wt-dock', 'aria-hidden': true },
 					React.createElement(Spiral, { size: 12 }),
-					React.createElement('span', null, '风随旅人 · 语落如羽 · v' + THEME_VERSION + ' · ' + beat),
+					React.createElement('span', null, '风随旅人 · 语落如羽'),
 					React.createElement(Spiral, { size: 12 }),
 				)
 			}
@@ -943,7 +787,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				)
 			}
 
-			/* ===== 自检与诊断 ===== */
+			/* ===== 自检与诊断(精简版) ===== */
 			function diagRow(label, ok, detail) {
 				return React.createElement('div', { className: 'wt-diag-row' },
 					React.createElement('span', { className: 'wt-diag-mark' + (ok ? ' wt-diag-ok' : ' wt-diag-bad') }, ok ? '✓' : '✗'),
@@ -958,44 +802,18 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					if (running) return
 					setRunning(true)
 					Promise.all([
-						fetch('/wanderer-theme/health').then(function (r) { return r.json() }).catch(function (e) { return { ok: false, error: String((e && e.message) || e) } }),
-						fetch('/wanderer-theme/wallpaper-video', { method: 'HEAD' }).then(function (r) { return { status: r.status, type: r.headers.get('content-type') || '' } }).catch(function (e) { return { status: 0, error: String((e && e.message) || e) } }),
-						fetch('/wanderer-theme/wallpaper', { method: 'HEAD' }).then(function (r) { return { status: r.status } }).catch(function () { return { status: 0 } }),
+						fetch('/wanderer-theme/health').then(function (r) { return r.json() }).catch(function () { return { ok: false } }),
+						fetch('/wanderer-theme/wallpaper-video', { method: 'HEAD' }).then(function (r) { return r.status }).catch(function () { return 0 }),
+						fetch('/wanderer-theme/wallpaper', { method: 'HEAD' }).then(function (r) { return r.status }).catch(function () { return 0 }),
 					]).then(function (parts) {
-						const health = parts[0]
-						const video = parts[1]
-						const poster = parts[2]
-						let tokenApplied = false
-						let glass = false
-						try {
-							const v = window.getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim()
-							tokenApplied = v.length > 0 && v.indexOf('rgba') >= 0
-							const col = document.querySelector('[class*="sidebarCol"], [class*="centerCol"]')
-							if (col) {
-								const cs = window.getComputedStyle(col)
-								const bf = cs.backdropFilter || cs.webkitBackdropFilter || ''
-								glass = bf.indexOf('blur') >= 0
-							}
-						} catch (err) {}
 						const v = wtStore.videoEl
-						const vstate = v
-							? (v.error ? '错误 ' + v.error.code : (v.readyState >= 3 ? '播放中' : (v.readyState >= 2 ? '已载入' : '加载中')) + (v.paused ? ' · 暂停' : '') + ' · t=' + (Math.round(v.currentTime * 10) / 10) + 's')
-							: '未创建(可能开启了减弱动态效果)'
 						setResult({
 							version: THEME_VERSION,
-							mode: document.body.hasAttribute('data-ds-dark-theme') ? 'dark' : 'light',
-							platform: document.documentElement.getAttribute('data-platform') || 'unknown',
-							healthOk: !!(health && health.ok),
-							healthDetail: health && health.ok
-								? ('视频 ' + (health.video && health.video.ok ? (health.video.bytes + ' B') : '不可用'))
-								: ('health 失败: ' + ((health && health.error) || '未知')),
-							videoOk: video.status === 200 && video.type.indexOf('video') >= 0,
-							videoDetail: (video.status === 200 ? (video.status + ' ' + video.type) : ('HTTP ' + (video.status || 0))) + ' · 元素: ' + vstate,
-							posterOk: poster.status === 200,
-							posterDetail: 'HTTP ' + poster.status,
-							tokenApplied: tokenApplied,
-							glass: glass,
-							time: new Date().toLocaleTimeString(),
+							mode: document.body.hasAttribute('data-ds-dark-theme') ? '深色' : '浅色',
+							health: !!(parts[0] && parts[0].ok),
+							video: parts[1] === 200,
+							poster: parts[2] === 200,
+							playing: !!(v && !v.paused && v.readyState >= 2 && !v.error),
 						})
 						setRunning(false)
 					})
@@ -1008,13 +826,9 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					),
 					result
 						? React.createElement('div', null,
-							diagRow('主题版本', true, result.version + ' · ' + (result.mode === 'dark' ? '深色' : '浅色') + ' · ' + result.platform),
-							diagRow('视频服务', result.healthOk, result.healthDetail),
-							diagRow('视频元素', result.videoOk, result.videoDetail),
-							diagRow('静态海报', result.posterOk, result.posterDetail),
-							diagRow('主题令牌', result.tokenApplied, result.tokenApplied ? 'base 为玻璃半透明' : '未检测到'),
-							diagRow('透明玻璃', result.glass, result.glass ? '主列 backdrop-filter 已应用' : '未检测到 backdrop-filter'),
-							React.createElement('div', { className: 'wt-diag-foot' }, '自检时间 ' + result.time + ' · 视频元素显示「暂停」时点击任意处即可恢复播放'),
+							diagRow('主题版本', true, result.version + ' · ' + result.mode),
+							diagRow('壁纸服务', result.health && result.video, result.health && result.video ? '视频与海报均可访问' : '服务异常'),
+							diagRow('动态播放', result.playing, result.playing ? '正在播放' : '未播放'),
 						)
 						: React.createElement('div', { className: 'wt-diag-foot' }, '自检运行中…'),
 				)
@@ -1035,8 +849,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					['video', '动态壁纸', '视频壁纸(关闭后使用静态海报)'],
 					['stars', '星空星尘', '壁纸上的闪烁星尘'],
 					['wind', '风元素粒子', '流动的风之微尘 · 四芒星 · 螺旋 · 风痕'],
-					['refract', '光学折射(实验)', 'SVG 位移滤镜模拟玻璃边缘折射；不支持的浏览器自动忽略'],
-					['battop', '壁纸置顶(诊断)', '把动态壁纸提到最上层；若此时壁纸动了，说明原被应用层遮挡'],
 					['frame', '卷轴边框', '全屏鎏金卷轴边框与八瓣金莲角饰'],
 					['ribbons', '绸带滚边', '左右紫色绳穗与青绸装饰线'],
 					['dock', '风语题签', '输入框下方的风语装饰'],
