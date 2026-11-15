@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.11.0'
+		const THEME_VERSION = '3.12.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -348,6 +348,14 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						video.setAttribute(attr, '')
 					})
 					video.setAttribute('aria-hidden', 'true')
+					/* 禁止画中画(PiP)/原生控件: Safari 可能把壁纸视频弹成左上角浮动小窗,
+					   看起来就像"第二个壁纸" */
+					try {
+						video.disablePictureInPicture = true
+						video.setAttribute('disablepictureinpicture', '')
+						video.setAttribute('controlslist', 'nodownload noplaybackrate nopictureinpicture')
+						video.controls = false
+					} catch (err) {}
 					video.muted = true
 					video.defaultMuted = true
 					video.volume = 0
@@ -369,10 +377,19 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					wrap.appendChild(poster)
 					wrap.appendChild(video)
 					wrap.appendChild(scrim)
-					/* 去重: 若插件被重复挂载,先清掉历史壁纸层,避免出现两个壁纸 */
+					/* 去重: 先清掉历史壁纸层,以及任何引用本主题壁纸资源的游离媒体元素 */
 					try {
 						const stale = document.querySelectorAll('.wt-bgmedia')
 						for (const el of stale) { try { el.remove() } catch (err) {} }
+						const strays = document.querySelectorAll('video, img, canvas, iframe')
+						for (const el of strays) {
+							let ref = ''
+							try {
+								ref = String(el.currentSrc || el.src || '')
+								if (!ref && el.style && el.style.backgroundImage) ref = el.style.backgroundImage
+							} catch (err) {}
+							if (ref.indexOf('/wanderer-theme/') >= 0) { try { el.remove() } catch (err) {} }
+						}
 					} catch (err) {}
 					/* 只挂在 body 下(绝不触碰 #root),插到最前以保证绘制顺序 */
 					document.body.insertBefore(wrap, document.body.firstChild)
@@ -467,6 +484,9 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						video.addEventListener(ev, function () { if (ev === 'playing') report('playing'); if (video.paused) tryPlay() })
 					})
 					video.addEventListener('error', function () { report('error'); console.error('[dsh-theme-wanderer] 视频元素错误:', video.error && video.error.code) })
+					if (document.pictureInPictureElement === video && document.exitPictureInPicture) {
+						try { document.exitPictureInPicture() } catch (err) {}
+					}
 					const unlock = function () {
 						tryPlay()
 						document.removeEventListener('pointerdown', unlock)
@@ -591,6 +611,38 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						} catch (err) {}
 					}
 					window.setTimeout(probeOccluders, 8000)
+
+					/* 媒体元素清点: 列出页面上所有 video/canvas/img/iframe 的位置与尺寸,定位"多出来的壁纸" */
+					window.setTimeout(function () {
+						try {
+							const items = []
+							const all = document.querySelectorAll('video, canvas, img, iframe')
+							for (let i = 0; i < all.length && i < 14; i++) {
+								const el = all[i]
+								const r = el.getBoundingClientRect()
+								let src = ''
+								try { src = String(el.currentSrc || el.src || '') } catch (err) {}
+								items.push(el.tagName + '[' + Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height) + ']'
+									+ 'cls=' + (String(el.className || '').slice(0, 18) || '-')
+									+ 'src=' + (src ? src.replace(/^https?:\/\/[^/]+/, '').slice(0, 34) : '-')
+									+ 'inWrap=' + (el.closest && el.closest('.wt-bgmedia') ? 'Y' : 'N'))
+							}
+							const pts = [[0.15, 0.18], [0.30, 0.10]]
+							const stack = []
+							for (const p of pts) {
+								const x = Math.round(window.innerWidth * p[0])
+								const y = Math.round(window.innerHeight * p[1])
+								const top = document.elementsFromPoint ? document.elementsFromPoint(x, y).slice(0, 4) : []
+								stack.push(p.join(',') + '=' + top.map(function (e) {
+									const r = e.getBoundingClientRect()
+									return (e.tagName || '?') + '.' + (String(e.className || '').split(' ')[0] || '-').slice(0, 16)
+										+ '[' + Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height) + ']'
+								}).join(' > '))
+							}
+							fetch('/wanderer-theme/clientlog?media ver=' + THEME_VERSION + ' layers=' + document.querySelectorAll('.wt-bgmedia').length
+								+ ' || ' + items.join(' || ') + ' || ' + stack.join(' || '), { cache: 'no-store' }).catch(function () {})
+						} catch (err) {}
+					}, 11000)
 
 					tryPlay()
 					window.setTimeout(function () { report('t+3s motion=' + motion); syncHint() }, 3000)
