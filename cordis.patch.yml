@@ -10,3 +10,4 @@
       inject:
         - fs
         - webServer
+        - connection

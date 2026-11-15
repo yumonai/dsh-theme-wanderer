@@ -1,7 +1,7 @@
 {
   "name": "dsh-theme-wanderer",
   "description": "原神流浪者主题美化 — DeepSeek Harness 常驻主题插件：内嵌动态壁纸视频、iOS 液态玻璃、浅深色适配、星尘与手绘装饰、设置页自检。",
-  "version": "3.20.0",
+  "version": "3.20.1",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
