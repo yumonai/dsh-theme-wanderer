@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, frame: true, ribbons: true, composer: false },
+			prefs: { video: true, stars: true, frame: true, ribbons: true, composer: true },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.19.0'
+		const THEME_VERSION = '3.20.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -113,47 +113,34 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
-/* ===== 输入框卡片玻璃(可选,默认关闭) =====
-   由设置里的「输入框玻璃」开关控制(切换 body.wt-composer-glass)。
-   关闭时完全不碰产品的输入框样式,保证输入框一定按产品原样显示。
-   开启时: 只在该作用域把输入底色令牌改成半透明,并给卡片补模糊与同款边缘光影。 */
-body.wt-composer-glass [class*="_composerStack"],
-body.wt-composer-glass [class*="_composerHero"],
-body.wt-composer-glass [class*="_composerSeat"] {
-  --dsw-specific-input-major: rgba(255, 255, 255, 0.16);
-}
-body.wt-composer-glass[data-ds-dark-theme] [class*="_composerStack"],
-body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"],
-body.wt-composer-glass[data-ds-dark-theme] [class*="_composerSeat"] {
-  --dsw-specific-input-major: rgba(12, 20, 34, 0.34);
-}
-/* 首屏(hero)输入框背后是亮色插画,保持产品不透明底色,避免"透明消失" */
-body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"] {
-  --dsw-specific-input-major: rgb(44, 44, 46);
-}
-body.wt-composer-glass:not([data-ds-dark-theme]) [class*="_composerHero"] {
-  --dsw-specific-input-major: #ffffff;
-}
+/* ===== 输入框卡片玻璃(安全实现,不用 backdrop-filter) =====
+   为什么不用 backdrop-filter: 在欢迎页(插画 + hero 布局)那套结构下,
+   WebKit 会把带 backdrop-filter 的 28px 圆角卡片整块合成失败 → 卡片与按钮全部不绘制。
+   所以这里只用"半透明底 + 镜面高光 + 冷/暖色散边 + 外侧投影"表达玻璃质感,
+   不触发任何合成/层叠行为;任何时候都不会影响输入框的显示与点击。 */
 body.wt-composer-glass [class*="_composerStack"] [class*="_card"],
 body.wt-composer-glass [class*="_composerHero"] [class*="_card"],
 body.wt-composer-glass [class*="_welcome"] [class*="_card"]:has(textarea) {
-  -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
-  backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  background-color: rgba(255, 255, 255, 0.34) !important;
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.08) 100%) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 0 0 1.5px rgba(150, 205, 255, 0.20),
-    inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
-    0 16px 44px rgba(8, 16, 30, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.26),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.12),
+    0 14px 40px rgba(8, 16, 30, 0.20) !important;
 }
 body.wt-composer-glass[data-ds-dark-theme] [class*="_composerStack"] [class*="_card"],
 body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"] [class*="_card"],
 body.wt-composer-glass[data-ds-dark-theme] [class*="_welcome"] [class*="_card"]:has(textarea) {
+  background-color: rgba(16, 26, 44, 0.34) !important;
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 46%, rgba(255, 255, 255, 0.05) 100%) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
-    0 16px 44px rgba(0, 0, 0, 0.40);
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.24),
+    inset 0 0 0 2.5px rgba(232, 200, 122, 0.12),
+    0 14px 40px rgba(0, 0, 0, 0.38) !important;
 }
 
 /* ===== 液态玻璃: 侧栏标准档,主对话列轻量档(更透、更清晰) ===== */
