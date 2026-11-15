@@ -39,10 +39,17 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 		}
 
 		const name = "dsh-theme-wanderer"
-		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.7.0'
+		const inject = []
+		const THEME_VERSION = '3.8.0'
 
 		function apply(ctx) {
+			/* 容错: 服务缺失时只跳过本主题,绝不拖住宿主启动(硬 inject 会让宿主一直等待) */
+			const themeSvc = ctx.get('theme')
+			const slotsSvc = ctx.get('slots')
+			if (!slotsSvc || typeof slotsSvc.inject !== 'function') {
+				console.warn('[dsh-theme-wanderer] slots 服务不可用,跳过主题界面(不阻塞启动)')
+				return
+			}
 			const TOKENS = {
 				'--dsw-alias-bg-base': { light: 'rgba(250, 252, 255, 0.03)', dark: 'rgba(6, 10, 20, 0.05)' },
 				'--dsw-alias-bg-layer-1': { light: 'rgba(255, 255, 255, 0.42)', dark: 'rgba(16, 27, 46, 0.36)' },
@@ -77,12 +84,11 @@ body::before {
   position: fixed; inset: 0; z-index: -3; pointer-events: none;
   background: url("/wanderer-theme/wallpaper") center top / cover no-repeat;
 }
-/* 应用根节点自建层叠上下文,壁纸层作为它的负 z-index 子层:
-   既不会被 body{isolation:isolate} 的背景压住,也不会盖住界面内容 */
-#root { position: relative; z-index: 0; }
-.wt-bgmedia { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: transparent; }
-body > .wt-bgmedia { position: fixed; z-index: -2; }
-.wt-bgposter { position: absolute; inset: 0; background: url("/wanderer-theme/wallpaper") center top / cover no-repeat; }
+/* 壁纸层挂在 body 上,使用负 z-index:
+   body{isolation:isolate} 使 body 成为层叠上下文 → 负 z 子层正好画在 body 背景之上、应用内容之下。
+   注意: 绝不能把节点插进 #root(React 挂载容器),否则会破坏 React 挂载导致启动卡死。 */
+.wt-bgmedia { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: transparent; }
+.wt-bgposter { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .wt-bgvideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
@@ -302,7 +308,8 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 			/* 挂载: 主题令牌 + 样式 + 动态壁纸视频 */
 			ctx.effect(function () {
 				const disposers = []
-				disposers.push(ctx.theme.overrideTokens('dsh-theme-wanderer', TOKENS))
+				try {
+				disposers.push((themeSvc && themeSvc.overrideTokens ? themeSvc.overrideTokens('dsh-theme-wanderer', TOKENS) : function () {}))
 
 				const styleEl = document.createElement('style')
 				styleEl.setAttribute('data-plugin', 'dsh-theme-wanderer')
@@ -354,15 +361,15 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					video.appendChild(source)
 					const scrim = document.createElement('div')
 					scrim.className = 'wt-bgscrim'
-					const poster = document.createElement('div')
+					const poster = document.createElement('img')
 					poster.className = 'wt-bgposter'
+					poster.alt = ''
+					poster.src = '/wanderer-theme/wallpaper'
 					wrap.appendChild(poster)
 					wrap.appendChild(video)
 					wrap.appendChild(scrim)
-					/* 优先挂进应用根节点(#root),使其成为根节点内的负 z-index 子层;
-					   没有 #root 时退回 body */
-					const mount = document.getElementById('root')
-					if (mount) { mount.insertBefore(wrap, mount.firstChild) } else { document.body.appendChild(wrap) }
+					/* 只挂在 body 下(绝不触碰 #root),插到最前以保证绘制顺序 */
+					document.body.insertBefore(wrap, document.body.firstChild)
 					/* Canvas 逐帧绘制: 视频层在某些 WebKit/合成场景下会被冻结或遮挡,
 					   把解码帧画到普通 canvas 上可稳定显示; 视频本身隐藏但继续解码 */
 					const canvas = document.createElement('canvas')
@@ -587,25 +594,29 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				}
 
 				wtApplyVideoPref()
+
+				} catch (err) {
+					console.error('[dsh-theme-wanderer] 壁纸挂载失败(不影响界面启动):', err)
+				}
 				return function () { for (const d of disposers) { try { d() } catch (err) {} } }
 			})
 
-			ctx.slots.inject('shell.overlay', function () {
-				return ctx.slots.register(
+			slotsSvc.inject('shell.overlay', function () {
+				return slotsSvc.register(
 					{ name: 'shell.overlay', id: 'wanderer-theme-layer', order: -100 },
 					function () { return React.createElement(WandererLayer) },
 				)
 			})
 
-			ctx.slots.inject('settings.section', function () {
-				return ctx.slots.register(
+			slotsSvc.inject('settings.section', function () {
+				return slotsSvc.register(
 					{ name: 'settings.section', id: 'wanderer-theme', order: 25, label: '原神流浪者主题美化' },
 					function () { return React.createElement(SettingsPanel) },
 				)
 			})
 
-			ctx.slots.inject('conversation.composer.dock', function () {
-				return ctx.slots.register(
+			slotsSvc.inject('conversation.composer.dock', function () {
+				return slotsSvc.register(
 					{ name: 'conversation.composer.dock', id: 'wanderer-dock', order: 10, label: '风语签' },
 					function () { return React.createElement(DockFlourish) },
 				)
