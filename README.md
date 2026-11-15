@@ -20,7 +20,6 @@ DeepSeek Harness 的**常驻主题插件**（bundle 形式安装，重启后依�
 - **浅/深色自动适配**：跟随系统 `prefers-color-scheme`，两套玻璃配色、标题/正文/卡片描边分别调校
 - **风元素粒子**：Canvas 流动微尘 + 四芒星（神之眼星型）+ 螺旋轨道粒子 + 风痕流线
 - **装饰元素**：全屏鎏金卷轴边框、左右紫色绳穗与青绸滚边、绸带分割线、青绸滚动条、风语题签（输入框下方）
-- **个人中心 · 浪客座**：侧栏「浪客座」入口 → 角色档案、四重名号画廊（国崩 / 倾奇者 / 散兵 / 流浪者）、命之座六星图（按会话次数点亮）
 - **设置页**：动态壁纸/星尘/粒子/边框/滚边/题签 6 个开关 + **自检与诊断面板** + **版权与来源**说明
 - **自检机制**：启动素材与视频预热自检、`/wanderer-theme/health` JSON 健康端点、浏览器控制台 `[dsh-theme-wanderer]` 日志
 
@@ -44,9 +43,9 @@ dsh plugin --profile web add github:yumonai/dsh-theme-wanderer
 
 > ⚠️ 手动安装请勿使用 `file:` 协议：pnpm 会把依赖**拷贝**进 store，之后修改源码不会生效；使用 `link:` 或上面的 bundle 安装。
 
-## 🖼️ 壁纸与素材路径
+## 🖼️ 壁纸与素材
 
-主题默认读取以下本机路径，可在 profile 的 `cordis.patch.yml` 中覆盖：
+动态壁纸视频与首帧海报**随插件打包**（`media/wallpaper.mp4`、`media/poster.jpg`），安装即见动态壁纸。路径可覆盖：
 
 ```yaml
 - id: wanderer-theme
@@ -56,14 +55,14 @@ dsh plugin --profile web add github:yumonai/dsh-theme-wanderer
 ```
 
 默认值：
-- 视频：`/Users/yuzhengdong/Downloads/16-10(4K).mp4`
-- 素材：`/Users/yuzhengdong/Downloads/流浪者素材`
+- 视频：包内 `media/wallpaper.mp4`（默认）
+- 素材：`/Users/yuzhengdong/Downloads/流浪者素材`（可选，缺失不影响壁纸）
 
 ## ⚖️ 版权与来源
 
-- **动态壁纸视频**《16-10(4K)》由主题使用者本人于 **Bilibili 小店向画师购买授权**，版权归原作者所有。
-- 本插件**不包含**该视频与任何《原神》角色素材，仅在本机读取本地文件用于个人界面美化，**不随插件分发**——他人安装后需自备素材，否则自动降级为纯色/无图界面。
-- 《原神》角色形象与美术素材版权归 **miHoYo / HoYoverse** 所有；本主题为**非官方粉丝作品**，与官方无关。
+- **动态壁纸视频**为购买授权的素材，**版权归原作者所有**，随本插件一起分发**仅供本主题动态壁纸使用**。
+- 本插件**免费分享**，请勿用于商业售卖。
+- 《原神》角色形象与美术素材版权归 **miHoYo / HoYoverse** 所有；本主题为**非官方粉丝作品**。
 
 ## 🔧 诊断与排查
 
