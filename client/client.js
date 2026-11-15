@@ -38,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.17.1'
+		const THEME_VERSION = '3.17.2'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -113,41 +113,134 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
 /* ===== 输入框卡片(欢迎页 / 主对话列): 与侧栏同款玻璃 =====
-   不再依赖产品的 --dsw-specific-input-major 令牌(上一版把它调透明后,
-   欢迎页的亮色插画上卡片直接"消失");这里给卡片自己的底色,两种模式都保证可见。
-   卡片内部若有子元素带底色/阴影会溢出 28px 圆角,因此用 overflow:hidden 裁剪并抹平。 */
+   产品给输入框用的底色令牌是 --dsw-specific-input-major(不透明),这里只在输入框作用域内改成半透明,
+   再给卡片补上 backdrop-filter 与同款边缘光影;用结构选择器,不依赖构建哈希类名。 */
+[class*="_composerStack"], [class*="_composerHero"], [class*="_composerSeat"] {
+  --dsw-specific-input-major: rgba(255, 255, 255, 0.16);
+}
+body[data-ds-dark-theme] [class*="_composerStack"],
+body[data-ds-dark-theme] [class*="_composerHero"],
+body[data-ds-dark-theme] [class*="_composerSeat"] {
+  --dsw-specific-input-major: rgba(12, 20, 34, 0.34);
+}
 [class*="_composerStack"] [class*="_card"],
 [class*="_composerHero"] [class*="_card"],
 [class*="_welcome"] [class*="_card"]:has(textarea) {
-  background-color: rgba(255, 255, 255, 0.55) !important;
-  border-radius: var(--dsw-radius-panel, 28px) !important;
-  overflow: hidden;
   -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.70),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
-    inset 0 0 0 1.5px rgba(150, 205, 255, 0.22),
-    inset 0 0 0 2.5px rgba(255, 190, 120, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.20),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
     0 16px 44px rgba(8, 16, 30, 0.22);
 }
 body[data-ds-dark-theme] [class*="_composerStack"] [class*="_card"],
 body[data-ds-dark-theme] [class*="_composerHero"] [class*="_card"],
 body[data-ds-dark-theme] [class*="_welcome"] [class*="_card"]:has(textarea) {
-  background-color: rgba(14, 22, 38, 0.62) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
+    0 16px 44px rgba(0, 0, 0, 0.40);
+}
+
+/* ===== 液态玻璃: 侧栏标准档,主对话列轻量档(更透、更清晰) ===== */
+[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
+  position: relative;
+  -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  overflow: hidden;
+}
+/* 主对话列: 只保留极轻的玻璃——几乎透明,文字清晰优先 */
+[class*="centerCol"] {
+  position: relative;
+  -webkit-backdrop-filter: blur(2px) saturate(135%) brightness(1.01);
+  backdrop-filter: blur(2px) saturate(135%) brightness(1.01);
+  overflow: hidden;
+}
+
+body:not([data-ds-dark-theme]) [class*="sidebarCol"],
+body:not([data-ds-dark-theme]) [class*="rightbarCol"],
+body:not([data-ds-dark-theme]) [class*="bottomRow"] {
+  background: rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.22),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.10),
+    inset 0 0 28px rgba(255, 255, 255, 0.10),
+    0 10px 40px rgba(8, 16, 30, 0.16);
+}
+body[data-ds-dark-theme] [class*="sidebarCol"],
+body[data-ds-dark-theme] [class*="rightbarCol"],
+body[data-ds-dark-theme] [class*="bottomRow"] {
+  background: rgba(10, 18, 32, 0.14) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1.5px rgba(120, 190, 255, 0.20),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.18),
     inset 0 0 0 2.5px rgba(232, 200, 122, 0.10),
-    0 16px 44px rgba(0, 0, 0, 0.42);
+    inset 0 0 30px rgba(120, 180, 255, 0.06),
+    0 10px 40px rgba(0, 0, 0, 0.35);
 }
-/* 抹平卡片内部自带的底色/阴影(它们会形成"下半截遮罩"且不跟随圆角) */
-[class*="_composerStack"] [class*="_card"] > *,
-[class*="_composerHero"] [class*="_card"] > *,
-[class*="_welcome"] [class*="_card"]:has(textarea) > * {
-  background-color: transparent !important;
-  box-shadow: none !important;
+/* 主对话列: 极淡底色 + 仅一条细边,几乎不遮挡壁纸 */
+body:not([data-ds-dark-theme]) [class*="centerCol"] {
+  background: rgba(255, 255, 255, 0.025) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+body[data-ds-dark-theme] [class*="centerCol"] {
+  background: rgba(8, 14, 26, 0.05) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+html[data-platform=darwin] [class*="sidebarCol"],
+html[data-platform=darwin] [class*="centerCol"],
+html[data-platform=darwin] [class*="rightbarCol"],
+html[data-platform=darwin] [class*="bottomRow"] {
+  background-image: none !important;
+}
+/* 玻璃面上的流光: 侧栏保留,主对话列只留极淡顶部光晕(避免影响阅读) */
+[class*="sidebarCol"]::after,
+[class*="rightbarCol"]::after,
+[class*="bottomRow"]::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background:
+    radial-gradient(120% 55% at 10% -6%, rgba(255,255,255,0.30), rgba(255,255,255,0) 62%),
+    linear-gradient(112deg, rgba(255,255,255,0) 34%, rgba(255,255,255,0.16) 46%, rgba(255,255,255,0) 58%),
+    linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 30%);
+  background-size: 100% 100%, 260% 100%, 100% 100%;
+  background-position: 0 0, -120% 0, 0 0;
+  animation: wt-glass-flow 11s ease-in-out infinite;
+  opacity: 0.9;
+}
+[class*="centerCol"]::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(120% 40% at 50% -8%, rgba(255,255,255,0.10), rgba(255,255,255,0) 60%);
+  opacity: 0.8;
+}
+body[data-ds-dark-theme] [class*="sidebarCol"]::after,
+body[data-ds-dark-theme] [class*="rightbarCol"]::after,
+body[data-ds-dark-theme] [class*="bottomRow"]::after {
+  background:
+    radial-gradient(120% 55% at 10% -6%, rgba(160,210,255,0.18), rgba(255,255,255,0) 62%),
+    linear-gradient(112deg, rgba(255,255,255,0) 34%, rgba(200,230,255,0.10) 46%, rgba(255,255,255,0) 58%),
+    linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 30%);
+  background-size: 100% 100%, 260% 100%, 100% 100%;
+  background-position: 0 0, -120% 0, 0 0;
+  animation: wt-glass-flow 13s ease-in-out infinite;
+  opacity: 0.85;
+}
+body[data-ds-dark-theme] [class*="centerCol"]::after {
+  background: radial-gradient(120% 40% at 50% -8%, rgba(160,210,255,0.08), rgba(255,255,255,0) 60%);
+  opacity: 0.7;
+}
+@keyframes wt-glass-flow {
+  0%   { background-position: 0 0, -120% 0, 0 0; }
+  55%  { background-position: 0 0, 120% 0, 0 0; }
+  100% { background-position: 0 0, -120% 0, 0 0; }
 }
 
 /* 青绸滚动条 */
