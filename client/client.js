@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true },
+			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true, refract: false },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -16,6 +16,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 		function wtSetPref(key, value) {
 			wtStore.prefs[key] = !!value
 			if (key === 'video') wtApplyVideoPref()
+			if (key === 'refract') document.body.classList.toggle('wt-refract-on', !!wtStore.prefs.refract)
 			wtStore.prefsListeners.forEach(function (fn) { fn() })
 		}
 		function wtTogglePref(key) { wtSetPref(key, !wtStore.prefs[key]) }
@@ -38,11 +39,11 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.1.0'
+		const THEME_VERSION = '3.2.0'
 
 		function apply(ctx) {
 			const TOKENS = {
-				'--dsw-alias-bg-base': { light: 'rgba(250, 252, 255, 0.14)', dark: 'rgba(8, 14, 26, 0.18)' },
+				'--dsw-alias-bg-base': { light: 'rgba(250, 252, 255, 0.03)', dark: 'rgba(6, 10, 20, 0.05)' },
 				'--dsw-alias-bg-layer-1': { light: 'rgba(255, 255, 255, 0.42)', dark: 'rgba(16, 27, 46, 0.36)' },
 				'--dsw-alias-bg-layer-2': { light: 'rgba(248, 251, 255, 0.34)', dark: 'rgba(22, 36, 58, 0.30)' },
 				'--dsw-alias-bg-overlay': { light: 'rgba(244, 248, 253, 0.88)', dark: 'rgba(14, 24, 42, 0.88)' },
@@ -81,34 +82,71 @@ body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 10
 body.wt-video-off .wt-bgmedia { display: none; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
 
-/* ===== 透明玻璃: 应用主列(压过产品自带的不透明背景) ===== */
-[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
-  backdrop-filter: blur(7px) saturate(135%);
-  -webkit-backdrop-filter: blur(7px) saturate(135%);
-}
+/* ===== 主界面: 完全透明(壁纸清晰可见) + 液态玻璃边缘光影 ===== */
 [class*="centerCol"] {
-  backdrop-filter: blur(5px) saturate(125%);
-  -webkit-backdrop-filter: blur(5px) saturate(125%);
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
+  position: relative;
+  backdrop-filter: blur(1.5px) saturate(130%);
+  -webkit-backdrop-filter: blur(1.5px) saturate(130%);
+  overflow: hidden;
 }
 body:not([data-ds-dark-theme]) [class*="sidebarCol"],
 body:not([data-ds-dark-theme]) [class*="rightbarCol"],
-body:not([data-ds-dark-theme]) [class*="bottomRow"],
-body:not([data-ds-dark-theme]) [class*="centerCol"] {
-  background: rgba(255, 255, 255, 0.10) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset -1px 0 0 rgba(255, 255, 255, 0.30);
+body:not([data-ds-dark-theme]) [class*="bottomRow"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow:
+    inset 0 0 2px 1px rgba(255, 255, 255, 0.40),
+    inset 0 0 10px 4px rgba(255, 255, 255, 0.14),
+    inset 0 4px 16px rgba(20, 40, 70, 0.05),
+    inset 0 8px 24px rgba(20, 40, 70, 0.05),
+    inset 1px 0 0 rgba(255, 255, 255, 0.45);
 }
 body[data-ds-dark-theme] [class*="sidebarCol"],
 body[data-ds-dark-theme] [class*="rightbarCol"],
-body[data-ds-dark-theme] [class*="bottomRow"],
-body[data-ds-dark-theme] [class*="centerCol"] {
-  background: rgba(6, 12, 24, 0.16) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset -1px 0 0 rgba(255, 255, 255, 0.05);
+body[data-ds-dark-theme] [class*="bottomRow"] {
+  background: rgba(4, 8, 16, 0.07) !important;
+  box-shadow:
+    inset 0 0 2px 1px rgba(255, 255, 255, 0.16),
+    inset 0 0 10px 4px rgba(255, 255, 255, 0.06),
+    inset 0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 1px 0 0 rgba(255, 255, 255, 0.10);
 }
 html[data-platform=darwin] [class*="sidebarCol"],
 html[data-platform=darwin] [class*="centerCol"],
 html[data-platform=darwin] [class*="rightbarCol"],
 html[data-platform=darwin] [class*="bottomRow"] {
   background-image: none !important;
+}
+/* 玻璃边缘: 斜向镜面反光 + 顶部光带(伪元素叠加) */
+[class*="sidebarCol"]::after,
+[class*="rightbarCol"]::after,
+[class*="bottomRow"]::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 16%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.08) 100%),
+    radial-gradient(90% 26% at 50% -4%, rgba(255,255,255,0.28), rgba(255,255,255,0) 70%);
+  opacity: 0.8;
+}
+body[data-ds-dark-theme] [class*="sidebarCol"]::after,
+body[data-ds-dark-theme] [class*="rightbarCol"]::after,
+body[data-ds-dark-theme] [class*="bottomRow"]::after {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 16%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.05) 100%),
+    radial-gradient(90% 26% at 50% -4%, rgba(255,255,255,0.16), rgba(255,255,255,0) 70%);
+  opacity: 0.7;
+}
+
+/* ===== 光学折射(实验): SVG 位移滤镜,支持时产生真实边缘折射 ===== */
+body.wt-refract-on [class*="sidebarCol"],
+body.wt-refract-on [class*="rightbarCol"],
+body.wt-refract-on [class*="bottomRow"] {
+  backdrop-filter: url(#wt-liquid-glass) blur(0.4px) saturate(140%);
+  -webkit-backdrop-filter: url(#wt-liquid-glass) blur(0.4px) saturate(140%);
 }
 
 /* 青绸滚动条 */
@@ -246,8 +284,27 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				document.head.appendChild(styleEl)
 				disposers.push(function () { try { styleEl.remove() } catch (err) {} })
 
-				const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-				if (!reduceMotion) {
+				{
+					/* 光学折射滤镜(SVG 位移): 供 backdrop-filter: url() 使用; 不支持的环境自动忽略 */
+				const svgNS = 'http://www.w3.org/2000/svg'
+				const svg = document.createElementNS(svgNS, 'svg')
+				svg.setAttribute('width', '0')
+				svg.setAttribute('height', '0')
+				svg.setAttribute('aria-hidden', 'true')
+				svg.style.position = 'absolute'
+				svg.style.width = '0'
+				svg.style.height = '0'
+				svg.style.overflow = 'hidden'
+				svg.innerHTML = '<defs><filter id="wt-liquid-glass" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">'
+					+ '<feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="1" seed="11" result="noise"/>'
+					+ '<feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G" result="disp"/>'
+					+ '<feGaussianBlur in="disp" stdDeviation="0.4"/>'
+					+ '</filter></defs>'
+				document.body.appendChild(svg)
+				disposers.push(function () { try { svg.remove() } catch (err) {} })
+				document.body.classList.toggle('wt-refract-on', !!wtStore.prefs.refract)
+
+				const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 					const wrap = document.createElement('div')
 					wrap.className = 'wt-bgmedia'
 					const video = document.createElement('video')
@@ -264,6 +321,10 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					video.preload = 'auto'
 					video.poster = '/wanderer-theme/wallpaper'
 					video.src = '/wanderer-theme/wallpaper-video'
+					const source = document.createElement('source')
+					source.src = '/wanderer-theme/wallpaper-video'
+					source.type = 'video/mp4'
+					video.appendChild(source)
 					const scrim = document.createElement('div')
 					scrim.className = 'wt-bgscrim'
 					wrap.appendChild(video)
@@ -272,6 +333,22 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					wtStore.videoEl = video
 					wtStore.mediaWrap = wrap
 
+					/* 把浏览器内的真实播放状态回传到 Host 终端,便于远端诊断 */
+					let reports = 0
+					function report(tag) {
+						if (reports > 8) return
+						reports++
+						try {
+							const st = 'evt=' + tag
+								+ ' err=' + (video.error ? video.error.code : 0)
+								+ ' rs=' + video.readyState
+								+ ' ns=' + video.networkState
+								+ ' paused=' + video.paused
+								+ ' t=' + (Math.round(video.currentTime * 10) / 10)
+								+ ' reducedMotion=' + reduceMotion
+							fetch('/wanderer-theme/clientlog?video ' + encodeURIComponent(st), { cache: 'no-store' }).catch(function () {})
+						} catch (err) {}
+					}
 					function tryPlay() {
 						try {
 							const p = video.play()
@@ -280,17 +357,37 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 							})
 						} catch (err) {}
 					}
-					;['loadeddata', 'canplay', 'canplaythrough', 'playing'].forEach(function (ev) {
-						video.addEventListener(ev, function () { if (video.paused) tryPlay() })
+					;['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'playing', 'waiting', 'stalled'].forEach(function (ev) {
+						video.addEventListener(ev, function () { if (ev === 'playing') report('playing'); if (video.paused) tryPlay() })
 					})
-					video.addEventListener('error', function () {
-						console.error('[dsh-theme-wanderer] 视频元素错误:', video.error && video.error.code)
-					})
-					const unlock = function () { tryPlay(); document.removeEventListener('pointerdown', unlock) }
+					video.addEventListener('error', function () { report('error'); console.error('[dsh-theme-wanderer] 视频元素错误:', video.error && video.error.code) })
+					const unlock = function () {
+						tryPlay()
+						document.removeEventListener('pointerdown', unlock)
+						document.removeEventListener('keydown', unlock)
+						document.removeEventListener('wheel', unlock)
+					}
 					document.addEventListener('pointerdown', unlock)
-					disposers.push(function () { document.removeEventListener('pointerdown', unlock) })
+					document.addEventListener('keydown', unlock)
+					document.addEventListener('wheel', unlock, { passive: true })
+					disposers.push(function () {
+						document.removeEventListener('pointerdown', unlock)
+						document.removeEventListener('keydown', unlock)
+						document.removeEventListener('wheel', unlock)
+					})
+					// 反复重试(自动播放策略/缓冲),最多约 20 秒
+					let tries = 0
+					const retry = window.setInterval(function () {
+						tries++
+						if (!video.paused && video.readyState >= 3) { window.clearInterval(retry); return }
+						try { video.play().catch(function () {}) } catch (err) {}
+						if (tries > 40) window.clearInterval(retry)
+					}, 500)
+					disposers.push(function () { window.clearInterval(retry) })
 
 					tryPlay()
+					window.setTimeout(function () { report('t+3s') }, 3000)
+					window.setTimeout(function () { report('t+9s') }, 9000)
 					disposers.push(function () {
 						try { video.pause() } catch (err) {}
 						try { video.removeAttribute('src') } catch (err) {}
@@ -690,6 +787,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					['video', '动态壁纸', '视频壁纸(关闭后使用静态海报)'],
 					['stars', '星空星尘', '壁纸上的闪烁星尘'],
 					['wind', '风元素粒子', '流动的风之微尘 · 四芒星 · 螺旋 · 风痕'],
+					['refract', '光学折射(实验)', 'SVG 位移滤镜模拟玻璃边缘折射；不支持的浏览器自动忽略'],
 					['frame', '卷轴边框', '全屏鎏金卷轴边框与八瓣金莲角饰'],
 					['ribbons', '绸带滚边', '左右紫色绳穗与青绸装饰线'],
 					['dock', '风语题签', '输入框下方的风语装饰'],
