@@ -38,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.15.0'
+		const THEME_VERSION = '3.15.1'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -112,37 +112,37 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
-/* ===== 液态玻璃: 主界面与侧栏统一(低模糊 + 高饱和 + 镜面高光 + 色散边) ===== */
-[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"], [class*="centerCol"] {
+/* ===== 液态玻璃: 侧栏标准档,主对话列轻量档(更透、更清晰) ===== */
+[class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
   position: relative;
   -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   overflow: hidden;
 }
-/* 主对话列稍轻,保证正文可读 */
+/* 主对话列: 只保留极轻的玻璃——几乎透明,文字清晰优先 */
 [class*="centerCol"] {
-  -webkit-backdrop-filter: blur(9px) saturate(165%) brightness(1.03);
-  backdrop-filter: blur(9px) saturate(165%) brightness(1.03);
+  position: relative;
+  -webkit-backdrop-filter: blur(2.5px) saturate(140%) brightness(1.01);
+  backdrop-filter: blur(2.5px) saturate(140%) brightness(1.01);
+  overflow: hidden;
 }
 
 body:not([data-ds-dark-theme]) [class*="sidebarCol"],
 body:not([data-ds-dark-theme]) [class*="rightbarCol"],
-body:not([data-ds-dark-theme]) [class*="bottomRow"],
-body:not([data-ds-dark-theme]) [class*="centerCol"] {
+body:not([data-ds-dark-theme]) [class*="bottomRow"] {
   background: rgba(255, 255, 255, 0.10) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),          /* 顶部镜面高光 */
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28),        /* 内侧薄边 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
     inset 0 -1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 0 0 1.5px rgba(150, 205, 255, 0.22),      /* 冷色色散边(蓝) */
-    inset 0 0 0 2.5px rgba(255, 190, 120, 0.10),      /* 暖色色散边(金) */
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.22),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.10),
     inset 0 0 28px rgba(255, 255, 255, 0.10),
-    0 10px 40px rgba(8, 16, 30, 0.16);                /* 外侧投影,制造厚度 */
+    0 10px 40px rgba(8, 16, 30, 0.16);
 }
 body[data-ds-dark-theme] [class*="sidebarCol"],
 body[data-ds-dark-theme] [class*="rightbarCol"],
-body[data-ds-dark-theme] [class*="bottomRow"],
-body[data-ds-dark-theme] [class*="centerCol"] {
+body[data-ds-dark-theme] [class*="bottomRow"] {
   background: rgba(10, 18, 32, 0.14) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
@@ -152,17 +152,25 @@ body[data-ds-dark-theme] [class*="centerCol"] {
     inset 0 0 30px rgba(120, 180, 255, 0.06),
     0 10px 40px rgba(0, 0, 0, 0.35);
 }
+/* 主对话列: 极淡底色 + 仅一条细边,几乎不遮挡壁纸 */
+body:not([data-ds-dark-theme]) [class*="centerCol"] {
+  background: rgba(255, 255, 255, 0.025) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+body[data-ds-dark-theme] [class*="centerCol"] {
+  background: rgba(8, 14, 26, 0.05) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
 html[data-platform=darwin] [class*="sidebarCol"],
 html[data-platform=darwin] [class*="centerCol"],
 html[data-platform=darwin] [class*="rightbarCol"],
 html[data-platform=darwin] [class*="bottomRow"] {
   background-image: none !important;
 }
-/* 玻璃面上的流光: 斜向高光带缓慢扫过 + 顶部光晕(肉眼可见的"液面"感) */
+/* 玻璃面上的流光: 侧栏保留,主对话列只留极淡顶部光晕(避免影响阅读) */
 [class*="sidebarCol"]::after,
 [class*="rightbarCol"]::after,
-[class*="bottomRow"]::after,
-[class*="centerCol"]::after {
+[class*="bottomRow"]::after {
   content: "";
   position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
@@ -174,10 +182,15 @@ html[data-platform=darwin] [class*="bottomRow"] {
   animation: wt-glass-flow 11s ease-in-out infinite;
   opacity: 0.9;
 }
+[class*="centerCol"]::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(120% 40% at 50% -8%, rgba(255,255,255,0.10), rgba(255,255,255,0) 60%);
+  opacity: 0.8;
+}
 body[data-ds-dark-theme] [class*="sidebarCol"]::after,
 body[data-ds-dark-theme] [class*="rightbarCol"]::after,
-body[data-ds-dark-theme] [class*="bottomRow"]::after,
-body[data-ds-dark-theme] [class*="centerCol"]::after {
+body[data-ds-dark-theme] [class*="bottomRow"]::after {
   background:
     radial-gradient(120% 55% at 10% -6%, rgba(160,210,255,0.18), rgba(255,255,255,0) 62%),
     linear-gradient(112deg, rgba(255,255,255,0) 34%, rgba(200,230,255,0.10) 46%, rgba(255,255,255,0) 58%),
@@ -186,6 +199,10 @@ body[data-ds-dark-theme] [class*="centerCol"]::after {
   background-position: 0 0, -120% 0, 0 0;
   animation: wt-glass-flow 13s ease-in-out infinite;
   opacity: 0.85;
+}
+body[data-ds-dark-theme] [class*="centerCol"]::after {
+  background: radial-gradient(120% 40% at 50% -8%, rgba(160,210,255,0.08), rgba(255,255,255,0) 60%);
+  opacity: 0.7;
 }
 @keyframes wt-glass-flow {
   0%   { background-position: 0 0, -120% 0, 0 0; }
