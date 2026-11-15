@@ -39,13 +39,13 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 		}
 
 		const name = "dsh-theme-wanderer"
-		const inject = []
-		const THEME_VERSION = '3.8.0'
+		const inject = ["slots", "theme"]
+		const THEME_VERSION = '3.10.0'
 
 		function apply(ctx) {
-			/* 容错: 服务缺失时只跳过本主题,绝不拖住宿主启动(硬 inject 会让宿主一直等待) */
-			const themeSvc = ctx.get('theme')
-			const slotsSvc = ctx.get('slots')
+			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
+			const themeSvc = ctx.theme || ctx.get('theme')
+			const slotsSvc = ctx.slots || ctx.get('slots')
 			if (!slotsSvc || typeof slotsSvc.inject !== 'function') {
 				console.warn('[dsh-theme-wanderer] slots 服务不可用,跳过主题界面(不阻塞启动)')
 				return
@@ -84,10 +84,11 @@ body::before {
   position: fixed; inset: 0; z-index: -3; pointer-events: none;
   background: url("/wanderer-theme/wallpaper") center top / cover no-repeat;
 }
-/* 壁纸层挂在 body 上,使用负 z-index:
-   body{isolation:isolate} 使 body 成为层叠上下文 → 负 z 子层正好画在 body 背景之上、应用内容之下。
-   注意: 绝不能把节点插进 #root(React 挂载容器),否则会破坏 React 挂载导致启动卡死。 */
-.wt-bgmedia { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: transparent; }
+/* 壁纸层: 不使用任何负 z-index(某些 WebKit 合成下负 z 固定层不刷新)。
+   壁纸层 z-index:0 放在 body 下,应用根节点仅用 CSS 抬到 z-index:1 盖在它上面。
+   注意: 只改 #root 的 CSS,绝不向 #root 插入节点(会破坏 React 挂载)。 */
+#root { position: relative; z-index: 1; }
+.wt-bgmedia { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
 .wt-bgposter { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .wt-bgvideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
