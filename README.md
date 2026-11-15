@@ -8,11 +8,9 @@
 [![DSH](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4b8bbe)](https://github.com/deepseek-ai)
 [![Version](https://img.shields.io/badge/version-3.20.0-c9a35c)](https://github.com/yumonai/dsh-theme-wanderer/releases)
 
-<img src="https://raw.githubusercontent.com/yumonai/dsh-theme-wanderer/main/docs/screenshot.png" width="880" alt="浅色外观" />
+<img src="https://raw.githubusercontent.com/yumonai/dsh-theme-wanderer/main/docs/screenshot.jpg" width="880" alt="主题实机界面：动态壁纸 + 液态玻璃输入框 + 鎏金卷轴边框" />
 
-<sub>深色外观 ↓</sub>
-
-<img src="https://raw.githubusercontent.com/yumonai/dsh-theme-wanderer/main/docs/screenshot-dark.png" width="880" alt="深色外观" />
+<sub>实机截图 · v3.20.0 · 动态壁纸播放中，输入框为玻璃档</sub>
 
 </div>
 
