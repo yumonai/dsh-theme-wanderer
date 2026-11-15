@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.13.0'
+		const THEME_VERSION = '3.14.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -90,8 +90,8 @@ body::before {
 #root { position: relative; z-index: 1; }
 .wt-bgmedia { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
 .wt-bgposter { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1; }
-/* 视频只作为 canvas 的取帧源: 保持解码但完全透明,避免 WebKit 把它当作可见合成层再投射一份(左上角小窗) */
-.wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 0 !important; }
+/* 视频即壁纸本体: 强制独立合成层,避免 Retina 下出现半尺寸副本 */
+.wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1 !important; transform: translateZ(0); backface-visibility: hidden; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
@@ -394,62 +394,35 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					} catch (err) {}
 					/* 只挂在 body 下(绝不触碰 #root),插到最前以保证绘制顺序 */
 					document.body.insertBefore(wrap, document.body.firstChild)
-					/* Canvas 逐帧绘制: 视频层在某些 WebKit/合成场景下会被冻结或遮挡,
-					   把解码帧画到普通 canvas 上可稳定显示; 视频本身隐藏但继续解码 */
-					const canvas = document.createElement('canvas')
-					canvas.className = 'wt-bgcanvas'
-					canvas.setAttribute('aria-hidden', 'true')
-					wrap.insertBefore(canvas, scrim)
-					const cctx = canvas.getContext('2d')
-					let rafId = 0
-					let lastDraw = 0
-					let drawErr = null
-					function drawFrame(ts) {
-						rafId = window.requestAnimationFrame(drawFrame)
-						if (!cctx) return
-						if (ts - lastDraw < 33) return
-						lastDraw = ts
+					/* 实测: canvas 在本机 WebKit 合成层不刷新,而 video 元素能正常显示动画。
+					   所以直接用 video 作壁纸本体,并强制独立合成层(translateZ(0)),
+					   避免 Retina 缩放下出现"半尺寸重复投射"的副本。 */
+					video.style.opacity = '1'
+					video.style.transform = 'translateZ(0)'
+					video.style.webkitTransform = 'translateZ(0)'
+					video.style.backfaceVisibility = 'hidden'
+					const sizeWallpaper = function () {
 						try {
-							const cw = canvas.clientWidth || window.innerWidth
-							const ch = canvas.clientHeight || window.innerHeight
-							const dpr = Math.min(window.devicePixelRatio || 1, 2)
-							const tw = Math.round(cw * dpr)
-							const th = Math.round(ch * dpr)
-							if (canvas.width !== tw || canvas.height !== th) { canvas.width = tw; canvas.height = th; cctx.setTransform(dpr, 0, 0, dpr, 0, 0) }
-							if (video.readyState >= 2 && video.videoWidth) {
-								const vr = video.videoWidth / video.videoHeight
-								const cr = cw / ch
-								let dw, dh
-								if (vr > cr) { dh = ch; dw = ch * vr } else { dw = cw; dh = cw / vr }
-								cctx.drawImage(video, (cw - dw) / 2, (ch - dh) / 2, dw, dh)
-							}
-						} catch (err) { drawErr = String((err && err.message) || err) }
-					}
-					try {
-						canvas.width = Math.round((window.innerWidth || 1440) * Math.min(window.devicePixelRatio || 1, 2))
-						canvas.height = Math.round((window.innerHeight || 900) * Math.min(window.devicePixelRatio || 1, 2))
-						rafId = window.requestAnimationFrame(drawFrame)
-					} catch (err) { drawErr = String(err) }
-					disposers.push(function () { try { window.cancelAnimationFrame(rafId) } catch (err) {} })
-					/* 窗口尺寸变化/从最小化恢复时重新校正画布,避免出现 0x0 的空画布 */
-					const onResize = function () {
-						try {
-							const dpr = Math.min(window.devicePixelRatio || 1, 2)
 							const w = window.innerWidth || 1440
 							const h = window.innerHeight || 900
-							wrap.style.width = '100%'
-							wrap.style.height = '100%'
-							canvas.width = Math.round(w * dpr)
-							canvas.height = Math.round(h * dpr)
+							wrap.style.width = w + 'px'
+							wrap.style.height = h + 'px'
+							wrap.style.left = '0px'
+							wrap.style.top = '0px'
+							video.style.width = w + 'px'
+							video.style.height = h + 'px'
 						} catch (err) {}
 					}
-					window.addEventListener('resize', onResize)
-					document.addEventListener('visibilitychange', onResize)
+					sizeWallpaper()
+					window.addEventListener('resize', sizeWallpaper)
+					document.addEventListener('visibilitychange', sizeWallpaper)
 					disposers.push(function () {
-						window.removeEventListener('resize', onResize)
-						document.removeEventListener('visibilitychange', onResize)
+						window.removeEventListener('resize', sizeWallpaper)
+						document.removeEventListener('visibilitychange', sizeWallpaper)
 					})
-
+					const canvas = null
+					const cctx = null
+					const drawErr = 'canvas-disabled'
 					wtStore.videoEl = video
 					wtStore.mediaWrap = wrap
 
@@ -568,7 +541,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					/* canvas 像素指纹: 判断"画布内容是否在更新"(与用户所见无关的客观证据) */
 					function canvasHash() {
 						try {
-							if (!cctx) return 'noctx'
+							if (!cctx || !canvas) return 'canvas-disabled'
 							const w = canvas.width
 							const h = canvas.height
 							if (!w || !h) return 'empty'
@@ -604,7 +577,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 							}).join(';') + '] videos=' + document.querySelectorAll('.wt-bgvideo').length + ' canvases=' + document.querySelectorAll('.wt-bgcanvas').length + ' posters=' + document.querySelectorAll('.wt-bgposter').length)
 							const media = document.querySelector('.wt-bgmedia')
 							const mcs = media ? getComputedStyle(media) : null
-							out.push('canvas=' + canvas.width + 'x' + canvas.height + ' drawErr=' + drawErr
+							out.push('canvas=' + (canvas ? (canvas.width + 'x' + canvas.height) : 'n/a') + ' drawErr=' + drawErr
 								+ ' hashA=' + hashA + ' hashB=' + hashB
 								+ ' mediaZ=' + (mcs ? mcs.zIndex : 'n/a') + ' mediaOp=' + (mcs ? mcs.opacity : 'n/a')
 								+ ' onTop=' + document.body.classList.contains('wt-bg-on-top'))
