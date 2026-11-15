@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true, refract: false },
+			prefs: { video: true, stars: true, wind: true, frame: true, ribbons: true, dock: true, refract: false, battop: false },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -17,6 +17,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 			wtStore.prefs[key] = !!value
 			if (key === 'video') wtApplyVideoPref()
 			if (key === 'refract') document.body.classList.toggle('wt-refract-on', !!wtStore.prefs.refract)
+			if (key === 'battop') document.body.classList.toggle('wt-bg-on-top', !!wtStore.prefs.battop)
 			wtStore.prefsListeners.forEach(function (fn) { fn() })
 		}
 		function wtTogglePref(key) { wtSetPref(key, !wtStore.prefs[key]) }
@@ -39,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.4.0'
+		const THEME_VERSION = '3.5.0'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -81,6 +82,9 @@ body::before {
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgmedia { display: none; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
+
+/* ===== 壁纸置顶(诊断): 把背景层提到最上层,用于判断是否被应用层遮挡 ===== */
+body.wt-bg-on-top .wt-bgmedia { z-index: 99999 !important; }
 
 /* ===== 动态壁纸 Canvas(逐帧绘制,规避视频层合成问题) ===== */
 .wt-bgcanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -497,26 +501,48 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						disposers.push(function () { window.clearInterval(motionTimer) })
 					} catch (err) {}
 
-					/* 遮挡探针: 报出屏幕中心点向上的元素链与它们的背景/滤镜,定位"谁挡住了壁纸" */
+					/* canvas 像素指纹: 判断"画布内容是否在更新"(与用户所见无关的客观证据) */
+					function canvasHash() {
+						try {
+							if (!cctx) return 'noctx'
+							const w = canvas.width
+							const h = canvas.height
+							if (!w || !h) return 'empty'
+							const d = cctx.getImageData(Math.max(0, Math.floor(w / 2) - 8), Math.max(0, Math.floor(h / 2) - 8), 16, 16).data
+							let sum = 0
+							for (let i = 0; i < d.length; i += 4) sum = (sum * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0
+							return String(sum)
+						} catch (err) { return 'err:' + ((err && err.name) || err) }
+					}
+					let hashA = null
+					let hashB = null
+					window.setTimeout(function () { hashA = canvasHash() }, 2500)
+					window.setTimeout(function () { hashB = canvasHash() }, 6500)
+
+					/* 四角探针: 找出压在最上层的元素(含背景/滤镜/z-index) */
 					function probeOccluders() {
 						try {
-							const el = document.elementFromPoint(Math.round(window.innerWidth / 2), Math.round(window.innerHeight / 2))
-							const chain = []
-							let n = el
-							let depth = 0
-							while (n && depth < 10) {
-								const cs = getComputedStyle(n)
-								chain.push((n.tagName || '?') + '.' + String(n.className || '').split(' ')[0].slice(0, 24)
-									+ ' bg=' + cs.backgroundColor + ' op=' + cs.opacity
-									+ ' bf=' + (cs.backdropFilter || cs.webkitBackdropFilter || 'none') + ' z=' + cs.zIndex)
-								n = n.parentElement
-								depth++
+							const pts = [[0.08, 0.08], [0.92, 0.08], [0.08, 0.92], [0.92, 0.92], [0.5, 0.5]]
+							const out = []
+							for (const p of pts) {
+								const x = Math.round(window.innerWidth * p[0])
+								const y = Math.round(window.innerHeight * p[1])
+								const el = document.elementFromPoint(x, y)
+								if (!el) { out.push(p.join(',') + '=null'); continue }
+								const cs = getComputedStyle(el)
+								out.push(p.join(',') + '=' + (el.tagName || '?') + '.' + (String(el.className || '').split(' ')[0] || '-').slice(0, 22)
+									+ '/bg:' + cs.backgroundColor + '/bf:' + (cs.backdropFilter || cs.webkitBackdropFilter || 'none') + '/z:' + cs.zIndex)
 							}
-							chain.push('canvas=' + canvas.width + 'x' + canvas.height + ' drawErr=' + drawErr + ' videoReady=' + video.readyState)
-							fetch('/wanderer-theme/clientlog?occl ' + encodeURIComponent(chain.join(' | ')), { cache: 'no-store' }).catch(function () {})
+							const media = document.querySelector('.wt-bgmedia')
+							const mcs = media ? getComputedStyle(media) : null
+							out.push('canvas=' + canvas.width + 'x' + canvas.height + ' drawErr=' + drawErr
+								+ ' hashA=' + hashA + ' hashB=' + hashB
+								+ ' mediaZ=' + (mcs ? mcs.zIndex : 'n/a') + ' mediaOp=' + (mcs ? mcs.opacity : 'n/a')
+								+ ' onTop=' + document.body.classList.contains('wt-bg-on-top'))
+							fetch('/wanderer-theme/clientlog?occl ' + encodeURIComponent(out.join(' | ')), { cache: 'no-store' }).catch(function () {})
 						} catch (err) {}
 					}
-					window.setTimeout(probeOccluders, 5000)
+					window.setTimeout(probeOccluders, 8000)
 
 					tryPlay()
 					window.setTimeout(function () { report('t+3s motion=' + motion); syncHint() }, 3000)
@@ -921,6 +947,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					['stars', '星空星尘', '壁纸上的闪烁星尘'],
 					['wind', '风元素粒子', '流动的风之微尘 · 四芒星 · 螺旋 · 风痕'],
 					['refract', '光学折射(实验)', 'SVG 位移滤镜模拟玻璃边缘折射；不支持的浏览器自动忽略'],
+					['battop', '壁纸置顶(诊断)', '把动态壁纸提到最上层；若此时壁纸动了，说明原被应用层遮挡'],
 					['frame', '卷轴边框', '全屏鎏金卷轴边框与八瓣金莲角饰'],
 					['ribbons', '绸带滚边', '左右紫色绳穗与青绸装饰线'],
 					['dock', '风语题签', '输入框下方的风语装饰'],
