@@ -38,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.16.1'
+		const THEME_VERSION = '3.17.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -111,6 +111,39 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
   animation: wt-hint-breathe 2.4s ease-in-out infinite;
 }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
+
+/* ===== 输入框卡片(欢迎页 / 主对话列): 与侧栏同款玻璃 =====
+   产品给输入框用的底色令牌是 --dsw-specific-input-major(不透明),这里只在输入框作用域内改成半透明,
+   再给卡片补上 backdrop-filter 与同款边缘光影;用结构选择器,不依赖构建哈希类名。 */
+[class*="_composerStack"], [class*="_composerHero"], [class*="_composerSeat"] {
+  --dsw-specific-input-major: rgba(255, 255, 255, 0.16);
+}
+body[data-ds-dark-theme] [class*="_composerStack"],
+body[data-ds-dark-theme] [class*="_composerHero"],
+body[data-ds-dark-theme] [class*="_composerSeat"] {
+  --dsw-specific-input-major: rgba(12, 20, 34, 0.34);
+}
+[class*="_composerStack"] [class*="_card"],
+[class*="_composerHero"] [class*="_card"],
+[class*="_welcome"] [class*="_card"]:has(textarea) {
+  -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1.5px rgba(150, 205, 255, 0.20),
+    inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
+    0 16px 44px rgba(8, 16, 30, 0.22);
+}
+body[data-ds-dark-theme] [class*="_composerStack"] [class*="_card"],
+body[data-ds-dark-theme] [class*="_composerHero"] [class*="_card"],
+body[data-ds-dark-theme] [class*="_welcome"] [class*="_card"]:has(textarea) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
+    0 16px 44px rgba(0, 0, 0, 0.40);
+}
 
 /* ===== 液态玻璃: 侧栏标准档,主对话列轻量档(更透、更清晰) ===== */
 [class*="sidebarCol"], [class*="rightbarCol"], [class*="bottomRow"] {
