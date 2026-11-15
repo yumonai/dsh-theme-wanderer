@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.12.0'
+		const THEME_VERSION = '3.13.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -90,7 +90,8 @@ body::before {
 #root { position: relative; z-index: 1; }
 .wt-bgmedia { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
 .wt-bgposter { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1; }
-.wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1; }
+/* 视频只作为 canvas 的取帧源: 保持解码但完全透明,避免 WebKit 把它当作可见合成层再投射一份(左上角小窗) */
+.wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 0 !important; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
