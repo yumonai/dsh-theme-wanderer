@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.3.0'
+		const THEME_VERSION = '3.4.0'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -81,6 +81,9 @@ body::before {
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgmedia { display: none; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
+
+/* ===== 动态壁纸 Canvas(逐帧绘制,规避视频层合成问题) ===== */
+.wt-bgcanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* ===== 视频未播放提示(自动隐藏) ===== */
 .wt-video-hint {
@@ -344,6 +347,44 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					wrap.appendChild(video)
 					wrap.appendChild(scrim)
 					document.body.appendChild(wrap)
+					/* Canvas 逐帧绘制: 视频层在某些 WebKit/合成场景下会被冻结或遮挡,
+					   把解码帧画到普通 canvas 上可稳定显示; 视频本身隐藏但继续解码 */
+					const canvas = document.createElement('canvas')
+					canvas.className = 'wt-bgcanvas'
+					canvas.setAttribute('aria-hidden', 'true')
+					wrap.insertBefore(canvas, scrim)
+					const cctx = canvas.getContext('2d')
+					let rafId = 0
+					let lastDraw = 0
+					let drawErr = null
+					function drawFrame(ts) {
+						rafId = window.requestAnimationFrame(drawFrame)
+						if (!cctx) return
+						if (ts - lastDraw < 33) return
+						lastDraw = ts
+						try {
+							const cw = canvas.clientWidth || window.innerWidth
+							const ch = canvas.clientHeight || window.innerHeight
+							const dpr = Math.min(window.devicePixelRatio || 1, 2)
+							const tw = Math.round(cw * dpr)
+							const th = Math.round(ch * dpr)
+							if (canvas.width !== tw || canvas.height !== th) { canvas.width = tw; canvas.height = th; cctx.setTransform(dpr, 0, 0, dpr, 0, 0) }
+							if (video.readyState >= 2 && video.videoWidth) {
+								const vr = video.videoWidth / video.videoHeight
+								const cr = cw / ch
+								let dw, dh
+								if (vr > cr) { dh = ch; dw = ch * vr } else { dw = cw; dh = cw / vr }
+								cctx.drawImage(video, (cw - dw) / 2, (ch - dh) / 2, dw, dh)
+							}
+						} catch (err) { drawErr = String((err && err.message) || err) }
+					}
+					try {
+						canvas.width = Math.round((window.innerWidth || 1440) * Math.min(window.devicePixelRatio || 1, 2))
+						canvas.height = Math.round((window.innerHeight || 900) * Math.min(window.devicePixelRatio || 1, 2))
+						rafId = window.requestAnimationFrame(drawFrame)
+					} catch (err) { drawErr = String(err) }
+					disposers.push(function () { try { window.cancelAnimationFrame(rafId) } catch (err) {} })
+
 					wtStore.videoEl = video
 					wtStore.mediaWrap = wrap
 
@@ -455,6 +496,27 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						}, 1500)
 						disposers.push(function () { window.clearInterval(motionTimer) })
 					} catch (err) {}
+
+					/* 遮挡探针: 报出屏幕中心点向上的元素链与它们的背景/滤镜,定位"谁挡住了壁纸" */
+					function probeOccluders() {
+						try {
+							const el = document.elementFromPoint(Math.round(window.innerWidth / 2), Math.round(window.innerHeight / 2))
+							const chain = []
+							let n = el
+							let depth = 0
+							while (n && depth < 10) {
+								const cs = getComputedStyle(n)
+								chain.push((n.tagName || '?') + '.' + String(n.className || '').split(' ')[0].slice(0, 24)
+									+ ' bg=' + cs.backgroundColor + ' op=' + cs.opacity
+									+ ' bf=' + (cs.backdropFilter || cs.webkitBackdropFilter || 'none') + ' z=' + cs.zIndex)
+								n = n.parentElement
+								depth++
+							}
+							chain.push('canvas=' + canvas.width + 'x' + canvas.height + ' drawErr=' + drawErr + ' videoReady=' + video.readyState)
+							fetch('/wanderer-theme/clientlog?occl ' + encodeURIComponent(chain.join(' | ')), { cache: 'no-store' }).catch(function () {})
+						} catch (err) {}
+					}
+					window.setTimeout(probeOccluders, 5000)
 
 					tryPlay()
 					window.setTimeout(function () { report('t+3s motion=' + motion); syncHint() }, 3000)
