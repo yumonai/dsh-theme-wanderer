@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		/* ===== 原神流浪者主题美化 · 共享状态 ===== */
 		const wtStore = {
-			prefs: { video: true, stars: true, frame: true, ribbons: true },
+			prefs: { video: true, stars: true, frame: true, ribbons: true, composer: false },
 			prefsListeners: new Set(),
 			videoEl: null,
 			mediaWrap: null,
@@ -16,6 +16,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 		function wtSetPref(key, value) {
 			wtStore.prefs[key] = !!value
 			if (key === 'video') wtApplyVideoPref()
+			if (key === 'composer') document.body.classList.toggle('wt-composer-glass', !!wtStore.prefs.composer)
 			wtStore.prefsListeners.forEach(function (fn) { fn() })
 		}
 		function wtTogglePref(key) { wtSetPref(key, !wtStore.prefs[key]) }
@@ -38,7 +39,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.18.1'
+		const THEME_VERSION = '3.19.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -112,20 +113,30 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 }
 @keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
-/* ===== 输入框卡片(欢迎页 / 主对话列): 与侧栏同款玻璃 =====
-   产品给输入框用的底色令牌是 --dsw-specific-input-major(不透明),这里只在输入框作用域内改成半透明,
-   再给卡片补上 backdrop-filter 与同款边缘光影;用结构选择器,不依赖构建哈希类名。 */
-[class*="_composerStack"], [class*="_composerHero"], [class*="_composerSeat"] {
+/* ===== 输入框卡片玻璃(可选,默认关闭) =====
+   由设置里的「输入框玻璃」开关控制(切换 body.wt-composer-glass)。
+   关闭时完全不碰产品的输入框样式,保证输入框一定按产品原样显示。
+   开启时: 只在该作用域把输入底色令牌改成半透明,并给卡片补模糊与同款边缘光影。 */
+body.wt-composer-glass [class*="_composerStack"],
+body.wt-composer-glass [class*="_composerHero"],
+body.wt-composer-glass [class*="_composerSeat"] {
   --dsw-specific-input-major: rgba(255, 255, 255, 0.16);
 }
-body[data-ds-dark-theme] [class*="_composerStack"],
-body[data-ds-dark-theme] [class*="_composerHero"],
-body[data-ds-dark-theme] [class*="_composerSeat"] {
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerStack"],
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"],
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerSeat"] {
   --dsw-specific-input-major: rgba(12, 20, 34, 0.34);
 }
-[class*="_composerStack"] [class*="_card"],
-[class*="_composerHero"] [class*="_card"],
-[class*="_welcome"] [class*="_card"]:has(textarea) {
+/* 首屏(hero)输入框背后是亮色插画,保持产品不透明底色,避免"透明消失" */
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"] {
+  --dsw-specific-input-major: rgb(44, 44, 46);
+}
+body.wt-composer-glass:not([data-ds-dark-theme]) [class*="_composerHero"] {
+  --dsw-specific-input-major: #ffffff;
+}
+body.wt-composer-glass [class*="_composerStack"] [class*="_card"],
+body.wt-composer-glass [class*="_composerHero"] [class*="_card"],
+body.wt-composer-glass [class*="_welcome"] [class*="_card"]:has(textarea) {
   -webkit-backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   backdrop-filter: blur(14px) saturate(185%) brightness(1.05);
   box-shadow:
@@ -135,25 +146,14 @@ body[data-ds-dark-theme] [class*="_composerSeat"] {
     inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
     0 16px 44px rgba(8, 16, 30, 0.22);
 }
-body[data-ds-dark-theme] [class*="_composerStack"] [class*="_card"],
-body[data-ds-dark-theme] [class*="_composerHero"] [class*="_card"],
-body[data-ds-dark-theme] [class*="_welcome"] [class*="_card"]:has(textarea) {
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerStack"] [class*="_card"],
+body.wt-composer-glass[data-ds-dark-theme] [class*="_composerHero"] [class*="_card"],
+body.wt-composer-glass[data-ds-dark-theme] [class*="_welcome"] [class*="_card"]:has(textarea) {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
     0 16px 44px rgba(0, 0, 0, 0.40);
-}
-
-/* ===== 欢迎页/首屏输入框: 还原产品不透明底色(可见、可输入) =====
-   首屏输入框在 _composerHero 内(与主对话列的 _composerStack 同源),它会继承上面的半透明覆盖,
-   但首屏卡片背后是亮色插画,半透明后看起来"消失"。这里把 hero 作用域内的令牌还原成产品原值。
-   选择器特意带上 body[...] 前缀,以压过上面 body[data-ds-dark-theme] 那条覆盖的优先级。 */
-body[data-ds-dark-theme] [class*="_composerHero"] {
-  --dsw-specific-input-major: rgb(44, 44, 46);
-}
-body:not([data-ds-dark-theme]) [class*="_composerHero"] {
-  --dsw-specific-input-major: #ffffff;
 }
 
 /* ===== 液态玻璃: 侧栏标准档,主对话列轻量档(更透、更清晰) ===== */
@@ -537,6 +537,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					})
 				}
 
+				document.body.classList.toggle('wt-composer-glass', !!wtStore.prefs.composer)
 				wtApplyVideoPref()
 
 				} catch (err) {
@@ -739,6 +740,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					['stars', '星空星尘', '壁纸上的闪烁星尘'],
 					['frame', '卷轴边框', '全屏鎏金卷轴边框与八瓣金莲角饰'],
 					['ribbons', '绸带滚边', '左右紫色绳穗与青绸装饰线'],
+					['composer', '输入框玻璃', '输入框使用侧栏同款玻璃；若输入框异常可关闭此项恢复原样'],
 				]
 				const rows = ITEMS.map(function (item) {
 					return React.createElement(Toggle, {
