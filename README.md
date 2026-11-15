@@ -44,11 +44,13 @@
 
 Harness 的 **插件** 页搜索 **「原神流浪者主题美化」** 或 `dsh-theme-wanderer` → 安装 → 重启。
 
+也可以直接从 npm 安装：<https://www.npmjs.com/package/dsh-theme-wanderer>
+
 ### 网页端（CLI）
 
 ```bash
 cd ~/.dsh/profiles/web
-npm install /path/to/dsh-theme-wanderer-3.20.0.tgz
+npm install dsh-theme-wanderer
 ```
 
 把包名加入该 profile 的 `package.json`：
@@ -62,7 +64,7 @@ npm install /path/to/dsh-theme-wanderer-3.20.0.tgz
 ### 桌面端（DeepSeek Harness.app）
 
 ```bash
-dsh plugin --profile desktop add /path/to/dsh-theme-wanderer-3.20.0.tgz
+dsh plugin --profile desktop add dsh-theme-wanderer
 ```
 
 同样把 `"dsh-theme-wanderer"` 加入 `~/.dsh/profiles/desktop/package.json` 的 `dsh.profile.bundles`，然后**完全退出并重开 App**。
@@ -112,7 +114,7 @@ config:
 | 壁纸是静态图 | 海报本身就是视频首帧，先确认视频路由：`/wanderer-theme/health` |
 | 页面没变化 | 旧页面缓存 → 关闭窗口重开或 `Cmd+Shift+R` |
 | 输入框显示异常 | 关闭「输入框玻璃」 |
-| 服务端 404 | 包内 `media/` 缺失 → 用 Release 里的 tgz 安装 |
+| 服务端 404 | 包内 `media/` 缺失 → 从 npm 重装：`npm install dsh-theme-wanderer` |
 
 ## 🔧 结构
 
