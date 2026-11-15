@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.2.0'
+		const THEME_VERSION = '3.2.1'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -81,6 +81,20 @@ body::before {
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgmedia { display: none; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
+
+/* ===== 视频未播放提示(自动隐藏) ===== */
+.wt-video-hint {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+  z-index: 6; pointer-events: auto; cursor: pointer;
+  padding: 6px 14px; border-radius: 999px; font-size: 12px; letter-spacing: 0.08em;
+  color: #f6ecd8; background: rgba(16, 28, 48, 0.55);
+  border: 1px solid rgba(232, 200, 122, 0.55);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 24px rgba(8,14,26,0.35);
+  animation: wt-hint-breathe 2.4s ease-in-out infinite;
+}
+@keyframes wt-hint-breathe { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
 
 /* ===== 主界面: 完全透明(壁纸清晰可见) + 液态玻璃边缘光影 ===== */
 [class*="centerCol"] {
@@ -346,6 +360,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 								+ ' paused=' + video.paused
 								+ ' t=' + (Math.round(video.currentTime * 10) / 10)
 								+ ' reducedMotion=' + reduceMotion
+								+ ' op=' + (getComputedStyle(video).opacity) + ' disp=' + (getComputedStyle(video).display) + ' rect=' + Math.round(video.getBoundingClientRect().width) + 'x' + Math.round(video.getBoundingClientRect().height)
 							fetch('/wanderer-theme/clientlog?video ' + encodeURIComponent(st), { cache: 'no-store' }).catch(function () {})
 						} catch (err) {}
 					}
@@ -385,9 +400,47 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					}, 500)
 					disposers.push(function () { window.clearInterval(retry) })
 
+					try { video.load() } catch (err) {}
+
+					/* 未播放时显示可点击提示(自动隐藏) */
+					const hint = document.createElement('button')
+					hint.type = 'button'
+					hint.className = 'wt-video-hint'
+					hint.textContent = '▶ 点击播放动态壁纸'
+					hint.style.display = 'none'
+					document.body.appendChild(hint)
+					hint.addEventListener('click', function () { tryPlay() })
+					function syncHint() {
+						const needs = video.paused || video.readyState < 2
+						hint.style.display = needs ? 'block' : 'none'
+					}
+					const hintTimer = window.setInterval(syncHint, 1200)
+					disposers.push(function () { window.clearInterval(hintTimer); try { hint.remove() } catch (err) {} })
+
+					/* 抽帧比对: 判断视频是否真的在动(区分解码失败与遮挡) */
+					let lastHash = -1
+					let motion = 'pending'
+					try {
+						const probe = document.createElement('canvas')
+						probe.width = 8
+						probe.height = 8
+						const pctx = probe.getContext('2d', { willReadFrequently: true })
+						const motionTimer = window.setInterval(function () {
+							try {
+								pctx.drawImage(video, 0, 0, 8, 8)
+								const d = pctx.getImageData(0, 0, 8, 8).data
+								let h = 0
+								for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0
+								if (lastHash >= 0) motion = h !== lastHash ? 'moving' : 'frozen'
+								lastHash = h
+							} catch (err) { motion = 'probe-failed' }
+						}, 1500)
+						disposers.push(function () { window.clearInterval(motionTimer) })
+					} catch (err) {}
+
 					tryPlay()
-					window.setTimeout(function () { report('t+3s') }, 3000)
-					window.setTimeout(function () { report('t+9s') }, 9000)
+					window.setTimeout(function () { report('t+3s motion=' + motion); syncHint() }, 3000)
+					window.setTimeout(function () { report('t+9s motion=' + motion); syncHint() }, 9000)
 					disposers.push(function () {
 						try { video.pause() } catch (err) {}
 						try { video.removeAttribute('src') } catch (err) {}
