@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.5.1'
+		const THEME_VERSION = '3.6.0'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -62,11 +62,12 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 			const CSS = `
 /* ===== 原神流浪者主题美化 v3.1: 透明玻璃 · 动态壁纸 ===== */
 html { background-color: #0a1424; }
+/* 关键: 应用自带 body{isolation:isolate},body 因此成为层叠上下文,
+   放在 body 上的 background-image 会盖住所有负 z-index 图层(动态壁纸)。
+   所以这里只留纯色底,海报交给 body::before(z:-3),视频交给 .wt-bgmedia(z:-2)。 */
 body {
   background-color: #0a1424;
-  background-image: url("/wanderer-theme/wallpaper");
-  background-size: cover;
-  background-position: center top;
+  background-image: none;
   font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
 }
 
