@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.5.0'
+		const THEME_VERSION = '3.5.1'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -821,13 +821,24 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				)
 			}
 
-			/* ===== 风语题签 ===== */
+			/* ===== 风语题签(含页面心跳: 视频实时用时,可判断页面是否新版/在动) ===== */
 			function DockFlourish() {
 				const prefs = wtUsePrefs()
+				const [beat, setBeat] = React.useState('t=…')
+				React.useEffect(function () {
+					const timer = setInterval(function () {
+						const v = wtStore.videoEl
+						if (!v) { setBeat('无视频'); return }
+						const t = Math.round((v.currentTime || 0) * 10) / 10
+						const rs = v.readyState
+						setBeat((v.paused ? '暂停' : rs >= 3 ? '▶' : '缓冲') + ' t=' + t + 's')
+					}, 700)
+					return function () { clearInterval(timer) }
+				}, [])
 				if (!prefs.dock) return null
 				return React.createElement('div', { className: 'wt-dock', 'aria-hidden': true },
 					React.createElement(Spiral, { size: 12 }),
-					React.createElement('span', null, '风随旅人 · 语落如羽 · v' + THEME_VERSION),
+					React.createElement('span', null, '风随旅人 · 语落如羽 · v' + THEME_VERSION + ' · ' + beat),
 					React.createElement(Spiral, { size: 12 }),
 				)
 			}
