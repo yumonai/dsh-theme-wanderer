@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.2.1'
+		const THEME_VERSION = '3.3.0'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -360,7 +360,10 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 								+ ' paused=' + video.paused
 								+ ' t=' + (Math.round(video.currentTime * 10) / 10)
 								+ ' reducedMotion=' + reduceMotion
-								+ ' op=' + (getComputedStyle(video).opacity) + ' disp=' + (getComputedStyle(video).display) + ' rect=' + Math.round(video.getBoundingClientRect().width) + 'x' + Math.round(video.getBoundingClientRect().height)
+								+ ' seek=' + video.seeking
+								+ ' buf=' + (video.buffered && video.buffered.length ? (Math.round(video.buffered.end(video.buffered.length - 1) * 10) / 10) : 0)
+								+ ' frames=' + ((video.getVideoPlaybackQuality && video.getVideoPlaybackQuality().totalVideoFrames) || video.webkitDecodedFrameCount || 'n/a')
+								+ ' w=' + Math.round(video.getBoundingClientRect().width) + 'x' + Math.round(video.getBoundingClientRect().height)
 							fetch('/wanderer-theme/clientlog?video ' + encodeURIComponent(st), { cache: 'no-store' }).catch(function () {})
 						} catch (err) {}
 					}
@@ -425,6 +428,9 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						probe.width = 8
 						probe.height = 8
 						const pctx = probe.getContext('2d', { willReadFrequently: true })
+						let lastTime = -1
+						let stalls = 0
+						let recovered = 0
 						const motionTimer = window.setInterval(function () {
 							try {
 								pctx.drawImage(video, 0, 0, 8, 8)
@@ -433,6 +439,18 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 								for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0
 								if (lastHash >= 0) motion = h !== lastHash ? 'moving' : 'frozen'
 								lastHash = h
+								// 卡帧自愈: 时间不走且未暂停 → 重新载入并播放
+								const t = Math.round(video.currentTime * 10) / 10
+								if (!video.paused) {
+									if (t === lastTime) stalls++
+									else stalls = 0
+									lastTime = t
+									if (stalls >= 2 && recovered < 3) {
+										recovered++
+										report('stall-recovery#' + recovered)
+										try { video.load(); video.play().catch(function () {}) } catch (err) {}
+									}
+								}
 							} catch (err) { motion = 'probe-failed' }
 						}, 1500)
 						disposers.push(function () { window.clearInterval(motionTimer) })
@@ -721,7 +739,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				if (!prefs.dock) return null
 				return React.createElement('div', { className: 'wt-dock', 'aria-hidden': true },
 					React.createElement(Spiral, { size: 12 }),
-					React.createElement('span', null, '风随旅人 · 语落如羽'),
+					React.createElement('span', null, '风随旅人 · 语落如羽 · v' + THEME_VERSION),
 					React.createElement(Spiral, { size: 12 }),
 				)
 			}
