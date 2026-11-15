@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.10.0'
+		const THEME_VERSION = '3.11.0'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -89,8 +89,8 @@ body::before {
    注意: 只改 #root 的 CSS,绝不向 #root 插入节点(会破坏 React 挂载)。 */
 #root { position: relative; z-index: 1; }
 .wt-bgmedia { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
-.wt-bgposter { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
-.wt-bgvideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
+.wt-bgposter { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1; }
+.wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
 body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
@@ -100,7 +100,7 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 body.wt-bg-on-top .wt-bgmedia { z-index: 99999 !important; }
 
 /* ===== 动态壁纸 Canvas(逐帧绘制,规避视频层合成问题) ===== */
-.wt-bgcanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.wt-bgcanvas { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; }
 
 /* ===== 视频未播放提示(自动隐藏) ===== */
 .wt-video-hint {
@@ -369,6 +369,11 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					wrap.appendChild(poster)
 					wrap.appendChild(video)
 					wrap.appendChild(scrim)
+					/* 去重: 若插件被重复挂载,先清掉历史壁纸层,避免出现两个壁纸 */
+					try {
+						const stale = document.querySelectorAll('.wt-bgmedia')
+						for (const el of stale) { try { el.remove() } catch (err) {} }
+					} catch (err) {}
 					/* 只挂在 body 下(绝不触碰 #root),插到最前以保证绘制顺序 */
 					document.body.insertBefore(wrap, document.body.firstChild)
 					/* Canvas 逐帧绘制: 视频层在某些 WebKit/合成场景下会被冻结或遮挡,
@@ -571,6 +576,11 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 								out.push(p.join(',') + '=' + (el.tagName || '?') + '.' + (String(el.className || '').split(' ')[0] || '-').slice(0, 22)
 									+ '/bg:' + cs.backgroundColor + '/bf:' + (cs.backdropFilter || cs.webkitBackdropFilter || 'none') + '/z:' + cs.zIndex)
 							}
+							const layers = document.querySelectorAll('.wt-bgmedia')
+							out.push('layers=' + layers.length + '[' + Array.prototype.map.call(layers, function (l) {
+								const r = l.getBoundingClientRect()
+								return Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + 'x' + Math.round(r.height)
+							}).join(';') + '] videos=' + document.querySelectorAll('.wt-bgvideo').length + ' canvases=' + document.querySelectorAll('.wt-bgcanvas').length + ' posters=' + document.querySelectorAll('.wt-bgposter').length)
 							const media = document.querySelector('.wt-bgmedia')
 							const mcs = media ? getComputedStyle(media) : null
 							out.push('canvas=' + canvas.width + 'x' + canvas.height + ' drawErr=' + drawErr
