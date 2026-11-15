@@ -3,7 +3,9 @@
 > 为 DeepSeek Harness Web UI 打造的常驻主题：**内嵌动态壁纸视频**、液态玻璃、鎏金描边与手绘装饰。
 > 安装即用 —— 视频与海报随插件分发，**不依赖任何本机路径**。
 
-![浅色](docs/screenshot.png)
+![浅色](https://raw.githubusercontent.com/yumonai/dsh-theme-wanderer/main/docs/screenshot.png)
+
+![深色](https://raw.githubusercontent.com/yumonai/dsh-theme-wanderer/main/docs/screenshot-dark.png)
 
 ## ✨ 效果
 
