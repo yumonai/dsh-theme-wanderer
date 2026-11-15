@@ -1,11 +1,14 @@
 {
   "name": "dsh-theme-wanderer",
-  "description": "DeepSeek Harness《原神》流浪者「久世浮倾」主题：全透明界面壁纸直出、风元素粒子、神之眼符号、浪客座命座视觉包装。",
-  "version": "2.0.0",
+  "description": "原神流浪者主题美化 — DeepSeek Harness 常驻主题插件：动态壁纸(视频)、iOS 27 液态玻璃、浅深色适配、风元素粒子、个人中心与自检诊断。",
+  "version": "3.0.0",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": [],
       "platform": "web"
@@ -14,6 +17,7 @@
   "exports": {
     ".": "./lib/index.js",
     "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   }
 }

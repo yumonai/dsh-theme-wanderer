@@ -1,106 +1,84 @@
-# 原神流浪者「久世浮倾」主题 · dsh-theme-wanderer
+# 原神流浪者主题美化 · dsh-theme-wanderer
 
-DeepSeek Harness 的**永久主题插件**（常驻 profile，重启后依然生效），以《原神》角色「流浪者」（久世浮倾 / 国崩 / 倾奇者 / 散兵）为核心的幻想风界面主题。
+DeepSeek Harness 的**常驻主题插件**（bundle 形式安装，重启后依然生效），以《原神》角色「流浪者」为核心的幻想风界面主题：**动态壁纸（视频）+ iOS 27 液态玻璃 + 浅/深色自动适配**。
 
-> 主题名：原神流浪者「久世浮倾」主题 · Wanderer Theme
+> 主题名：**原神流浪者主题美化** · Wanderer Theme v3.0.0
 
 ## 🖼️ 界面预览
 
-![原神流浪者「久世浮倾」主题预览](docs/screenshot.png)
+![原神流浪者主题美化 · 界面预览](docs/screenshot.png)
 
-![原神流浪者「久世浮倾」主题 · 深色外观](docs/screenshot-dark.png)
+![原神流浪者主题美化 · 深色外观](docs/screenshot-dark.png)
 
-> 🌙 **目前版本主题推荐使用深色外观**：暗色模式自带暮色滤镜，壁纸层次与鎏金描边对比度最佳。
+> 🌙 推荐使用**深色外观**：暮色滤镜下壁纸层次与鎏金描边对比度最佳。
+> 📺 v3 起壁纸为**动态视频**，静态截图无法呈现流动效果。
 
 ## ✨ 效果
 
-- **壁纸直出**：壁纸直接烘焙进应用 base 主题令牌（`--dsw-alias-bg-base`），应用面板自身绘制壁纸，不依赖背景图层，连启动画面都带壁纸；亮/暗双模式自动适配
-- **配色**：白 + 天蓝 + 湖蓝顺色，鎏金点缀，淡紫呼应角色紫瞳
+- **动态壁纸**：视频壁纸铺满背景（支持 HTTP Range 分块流式加载与循环播放），暂停或 `prefers-reduced-motion` 时自动降级为静态海报
+- **iOS 27 液态玻璃**：主列（侧栏/内容/右栏/底栏）应用 `backdrop-filter: blur(30px) saturate(190%)`，配顶部高光内阴影与发丝边；金箔卡片使用 40px 大半径玻璃
+- **浅/深色自动适配**：跟随系统 `prefers-color-scheme`，两套玻璃配色、标题/正文/卡片描边分别调校
 - **风元素粒子**：Canvas 流动微尘 + 四芒星（神之眼星型）+ 螺旋轨道粒子 + 风痕流线
-- **羊皮卷质感**：毛玻璃卡片、做旧金边、八瓣金莲角饰、绸带分割线、青绸滚动条
-- **角色元素**：水晶球挂坠状态指示器（点击进入个人中心）、会话中立绘圆章、欢迎页立绘簇与鎏金题字
-- **个人中心 · 浪客座**：角色档案、四重名号画廊（国崩 / 倾奇者 / 散兵 / 流浪者）、命之座六星图（按会话次数点亮）
-- **设置页**：7 个装饰开关 + **自检与诊断面板**（一键排查）
-- **自检机制**：启动素材预热自检、`/wanderer-theme/health` JSON 健康端点、浏览器控制台 `[dsh-theme-wanderer]` 日志
+- **装饰元素**：全屏鎏金卷轴边框、左右紫色绳穗与青绸滚边、绸带分割线、青绸滚动条、风语题签（输入框下方）
+- **个人中心 · 浪客座**：侧栏「浪客座」入口 → 角色档案、四重名号画廊（国崩 / 倾奇者 / 散兵 / 流浪者）、命之座六星图（按会话次数点亮）
+- **设置页**：动态壁纸/星尘/粒子/边框/滚边/题签 6 个开关 + **自检与诊断面板** + **版权与来源**说明
+- **自检机制**：启动素材与视频预热自检、`/wanderer-theme/health` JSON 健康端点、浏览器控制台 `[dsh-theme-wanderer]` 日志
 
 ## 📁 结构
 
 ```
-lib/index.js       Host 半部: /wanderer-theme/* 素材路由 + health 端点 + 预热自检
-client/client.js   Client 半部: 主题令牌、CSS、粒子画布、挂坠、个人中心、设置页、自检面板
-package.json       dsh.client 声明(web 平台)与导出
+cordis.patch.yml   bundle 补丁: 插入 wanderer-theme 行(inject: fs, webServer)
+lib/index.js       Host 半部: 素材与视频路由(Range 206) + health 端点 + 启动自检
+client/client.js   Client 半部: 主题令牌、液态玻璃样式、动态壁纸视频、粒子、个人中心、设置页、自检面板
+docs/              界面预览截图
 ```
 
-## 📦 安装（3 步）
+## 📦 安装
 
 ```bash
-# 1. 克隆到本机主题目录
-git clone https://github.com/yumonai/dsh-theme-wanderer.git ~/.dsh/themes/dsh-theme-wanderer
-
-# 2. 在 web profile 中以 link: 协议安装(符号链接,改源码即时生效)
-cd ~/.dsh/profiles/web
-pnpm add "dsh-theme-wanderer@link:../../themes/dsh-theme-wanderer"
+# 以 bundle 形式安装(自动写入 profile 的 dependencies、bundles 与补丁行)
+dsh plugin --profile web add github:yumonai/dsh-theme-wanderer
 ```
 
-3. 编辑 `~/.dsh/profiles/web/cordis.patch.yml`，在最外层数组中加入：
+重启 `dsh web` 并彻底退出重开 Web 界面即可生效。
+
+> ⚠️ 手动安装请勿使用 `file:` 协议：pnpm 会把依赖**拷贝**进 store，之后修改源码不会生效；使用 `link:` 或上面的 bundle 安装。
+
+## 🖼️ 壁纸与素材路径
+
+主题默认读取以下本机路径，可在 profile 的 `cordis.patch.yml` 中覆盖：
 
 ```yaml
-- insert:
-    - id: wanderer-theme
-      name: dsh-theme-wanderer
-      inject:
-        - fs
-        - webServer
+- id: wanderer-theme
+  config:
+    videoPath: /path/to/your/video.mp4     # 动态壁纸视频
+    assetsDir: /path/to/your/assets        # 角色素材目录(静态海报与个人中心画廊)
 ```
 
-4. 重启 `dsh web`（并彻底退出重开 Web 界面）。
+默认值：
+- 视频：`/Users/yuzhengdong/Downloads/16-10(4K).mp4`
+- 素材：`/Users/yuzhengdong/Downloads/流浪者素材`
 
-> ⚠️ 不要用 `file:` 协议安装本包：pnpm 会把 `file:` 依赖**拷贝**进 store，
-> 之后修改源码不会生效（本主题开发期踩过的坑之一）。务必使用 `link:`。
+## ⚖️ 版权与来源
 
-## 🖼️ 壁纸与素材
+- **动态壁纸视频**《16-10(4K)》由主题使用者本人于 **Bilibili 小店向画师购买授权**，版权归原作者所有。
+- 本插件**不包含**该视频与任何《原神》角色素材，仅在本机读取本地文件用于个人界面美化，**不随插件分发**——他人安装后需自备素材，否则自动降级为纯色/无图界面。
+- 《原神》角色形象与美术素材版权归 **miHoYo / HoYoverse** 所有；本主题为**非官方粉丝作品**，与官方无关。
 
-素材图片位于 `lib/index.js` 顶部的 `baseDir`（默认 `/Users/yuzhengdong/Downloads/流浪者素材`）。
-换壁纸/换图只需改 `files` 映射表，然后重启。若素材目录移动或删除，主题界面仍可用，仅图片缺失（启动日志会打印 FAIL 明细）。
+## 🔧 诊断与排查
 
-## 🔧 诊断与排查手册
-
-主题内置三层诊断，按顺序使用：
-
-**① 终端启动日志**（所有 `[dsh-theme-wanderer]` 前缀行）
-- `素材预热自检`：11 个素材逐个 OK/FAIL + 字节数 —— FAIL 即素材路径问题
-- `fs 或 webServer 服务不可用`：cordis.patch.yml 中该行缺 `inject: [fs, webServer]`
-- `GET /wanderer-theme/<name>`：每次素材请求的访问日志
-
-**② 健康端点**
-```bash
-curl http://127.0.0.1:3080/wanderer-theme/health
-# → {"ok":true,"version":"2.0.0","baseDir":"...","assets":{...}}
-```
-
-**③ 界面自检面板**：设置 → 久世浮倾主题 → 「自检与诊断」，一键检查素材服务 / 壁纸图片 / 主题令牌注入状态；浏览器控制台同步输出 `[dsh-theme-wanderer]` 自检日志。
-
-### 踩坑速查表（本主题开发全程实录）
+三层诊断：**终端日志**（`[dsh-theme-wanderer]` 前缀，启动自检 + 每次请求）→ **`/wanderer-theme/health`**（JSON：素材/视频字节与错误）→ **设置页自检面板**（素材服务、视频、令牌注入、玻璃生效）。
 
 | 症状 | 原因 | 解决 |
 | --- | --- | --- |
-| 重启后主题/壁纸消失 | 页面缓存：Web App 重连不重载 HTML，旧 manifest 没有主题模块 | 彻底退出 Web App 再打开，或浏览器 Cmd+Shift+R |
-| 启动报 `ERR_MODULE_NOT_FOUND: Cannot find package '@deepseek-ai/...'` | 全局 `dsh` 用 pnpm 安装：pnpm store 隔离布局让加载器向上查不到行包（npm/npx 平铺布局正常） | 全局用 npm 装：`npm install -g @deepseek-ai/dsh --prefix ~/.npm-global` 并链入 PATH；或把 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 按 `0.1.0-rc.6` 精确版本装进 profile |
-| 素材路由返回 index.html（SPA 兜底页）而非图片 | 主题行在 `webServer` 服务就绪前执行（`fs or webServer service unavailable`） | 行内声明 `inject: [fs, webServer]` |
-| 改了主题源码但不生效 | `file:` 依赖被 pnpm 拷贝进 store，改源码不会同步 | 用 `link:` 协议重装 |
-| 壁纸看不见但界面有装饰 | 旧版主题把壁纸放在 body 背景层，被不透明面板盖住 | v2.0 已把壁纸烘焙进 `--dsw-alias-bg-base`，面板自身绘制壁纸 |
-| 控制台/自检面板 ✗ | 见面板逐项结果 | 对照上方 ①② 日志定位 |
-
-## 📝 开发
-
-```bash
-# 改完源码后:
-node --check lib/index.js && node --check client/client.js   # 语法
-# 用自由端口试启动,观察预热自检与路由:
-dsh web --port 0
-curl http://127.0.0.1:<port>/wanderer-theme/health
-```
+| 重启后主题/壁纸消失 | 页面缓存：Web App 重连不重载 HTML | 彻底退出 Web App 再打开，或浏览器 Cmd+Shift+R |
+| 动态壁纸不播放 | 视频路径不存在/不可读 | 看终端自检 `video FAIL`；改 `config.videoPath` |
+| 壁纸是静态图且无动画 | `prefers-reduced-motion` 开启 / 设置里关闭了动态壁纸 | 系统关闭「减弱动态效果」或在设置页重新开启 |
+| 玻璃效果不明显 | 显卡/浏览器不支持 `backdrop-filter` | 自检面板「液态玻璃已生效」为 ✗ 时即为不支持 |
+| 素材路由返回 SPA 页面或 401 | 直接 curl 探测时缺少认证/rev 参数 | 以终端自检日志与 health 端点为准 |
+| 改了源码不生效 | `file:` 依赖被 pnpm 拷贝进 store | 用 `link:` 协议或 bundle 安装 |
+| `ERR_MODULE_NOT_FOUND`（全局 dsh 启动） | pnpm 全局隔离布局导致加载器找不到行包 | 用 npm 全局安装 dsh，或把 bundle 装进 profile |
 
 ## 📄 许可
 
-MIT。角色素材版权归米哈游（miHoYo / HoYoverse），仅供个人本地界面美化使用。
+代码 MIT。角色与视频素材版权见上方「版权与来源」。
