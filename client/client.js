@@ -38,7 +38,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.16.0'
+		const THEME_VERSION = '3.16.1'
 
 		function apply(ctx) {
 			/* inject 保证 slots/theme 已就绪(软依赖会在服务未就绪时拿不到而整主题跳过) */
@@ -52,9 +52,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 				'--dsw-alias-bg-base': { light: 'rgba(250, 252, 255, 0.03)', dark: 'rgba(6, 10, 20, 0.05)' },
 				'--dsw-alias-bg-layer-1': { light: 'rgba(255, 255, 255, 0.42)', dark: 'rgba(16, 27, 46, 0.36)' },
 				'--dsw-alias-bg-layer-2': { light: 'rgba(248, 251, 255, 0.34)', dark: 'rgba(22, 36, 58, 0.30)' },
-				'--dsw-alias-bg-overlay': { light: 'rgba(246, 250, 255, 0.62)', dark: 'rgba(12, 20, 36, 0.66)' },
-				'--dsw-specific-menu': { light: 'rgba(255, 255, 255, 0.16)', dark: 'rgba(12, 20, 34, 0.34)' },
-				'--dsw-menu-backdrop-filter': { light: 'blur(14px) saturate(185%) brightness(1.05)', dark: 'blur(14px) saturate(170%) brightness(1.02)' },
+				'--dsw-alias-bg-overlay': { light: 'rgba(244, 248, 253, 0.88)', dark: 'rgba(14, 24, 42, 0.88)' },
 				'--dsw-alias-border-l1': { light: 'rgba(255, 255, 255, 0.50)', dark: 'rgba(255, 255, 255, 0.08)' },
 				'--dsw-alias-border-l2': { light: 'rgba(168, 138, 82, 0.50)', dark: 'rgba(212, 175, 106, 0.36)' },
 				'--dsw-alias-brand-primary': { light: '#2f93c4', dark: '#6fc3e8' },
@@ -124,8 +122,8 @@ body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 /* 主对话列: 只保留极轻的玻璃——几乎透明,文字清晰优先 */
 [class*="centerCol"] {
   position: relative;
-  -webkit-backdrop-filter: blur(1.5px) saturate(135%) brightness(1.01);
-  backdrop-filter: blur(1.5px) saturate(135%) brightness(1.01);
+  -webkit-backdrop-filter: blur(2px) saturate(135%) brightness(1.01);
+  backdrop-filter: blur(2px) saturate(135%) brightness(1.01);
   overflow: hidden;
 }
 
@@ -210,24 +208,6 @@ body[data-ds-dark-theme] [class*="centerCol"]::after {
   0%   { background-position: 0 0, -120% 0, 0 0; }
   55%  { background-position: 0 0, 120% 0, 0 0; }
   100% { background-position: 0 0, -120% 0, 0 0; }
-}
-
-/* ===== 次级界面(设置/弹窗/菜单/面板): 与侧栏同款玻璃边缘光影 ===== */
-[class*="_dialog"], [class*="_panel"] {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.62),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 0 0 1.5px rgba(150, 205, 255, 0.20),
-    inset 0 0 0 2.5px rgba(255, 190, 120, 0.08),
-    0 16px 48px rgba(8, 16, 30, 0.22);
-}
-body[data-ds-dark-theme] [class*="_dialog"],
-body[data-ds-dark-theme] [class*="_panel"] {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1.5px rgba(120, 190, 255, 0.16),
-    0 16px 48px rgba(0, 0, 0, 0.40);
 }
 
 /* 青绸滚动条 */
@@ -341,8 +321,7 @@ body[data-ds-dark-theme] .wt-copy-title { color: #f6ecd8; }
 body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 
 @media (prefers-reduced-motion: reduce) {
-  .wt-stars-1, .wt-stars-2, .wt-spiral, .wt-dock .wt-spiral { animation: none; }
-  .wt-wind { display: none; }
+  .wt-stars-1, .wt-stars-2, .wt-spiral { animation: none; }
 }
 `
 
