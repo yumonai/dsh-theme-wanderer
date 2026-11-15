@@ -1,6 +1,6 @@
 {
   "name": "dsh-theme-wanderer",
-  "description": "原神流浪者主题美化 — DeepSeek Harness 常驻主题插件：动态壁纸(视频)、iOS 27 液态玻璃、浅深色适配、风元素粒子、个人中心与自检诊断。",
+  "description": "原神流浪者主题美化 — DeepSeek Harness 常驻主题插件：内嵌动态壁纸视频、iOS 液态玻璃、浅深色适配、星尘与手绘装饰、设置页自检。",
   "version": "3.20.0",
   "type": "module",
   "main": "lib/index.js",
@@ -19,5 +19,26 @@
     "./client": "./client/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
-  }
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-theme",
+    "theme",
+    "genshin",
+    "wanderer"
+  ],
+  "files": [
+    "lib/",
+    "client/",
+    "media/",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yumonai/dsh-theme-wanderer.git"
+  },
+  "homepage": "https://github.com/yumonai/dsh-theme-wanderer#readme"
 }

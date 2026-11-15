@@ -11,7 +11,6 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 			prefs: { video: true, stars: true, frame: true, ribbons: true, composer: true },
 			prefsListeners: new Set(),
 			videoEl: null,
-			mediaWrap: null,
 		}
 		function wtSetPref(key, value) {
 			wtStore.prefs[key] = !!value
@@ -93,11 +92,9 @@ body::before {
 .wt-bgvideo { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1 !important; transform: translateZ(0); backface-visibility: hidden; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
-body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
+body.wt-video-off .wt-bgvideo { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
 
-/* ===== 动态壁纸 Canvas(逐帧绘制,规避视频层合成问题) ===== */
-.wt-bgcanvas { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; }
 
 /* ===== 视频未播放提示(自动隐藏) ===== */
 .wt-video-hint {
@@ -370,7 +367,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 				disposers.push(function () { try { styleEl.remove() } catch (err) {} })
 
 				{
-	const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 					const wrap = document.createElement('div')
 					wrap.className = 'wt-bgmedia'
 					const video = document.createElement('video')
@@ -424,8 +420,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					} catch (err) {}
 					/* 只挂在 body 下(绝不触碰 #root),插到最前以保证绘制顺序 */
 					document.body.insertBefore(wrap, document.body.firstChild)
-					/* 实测: canvas 在本机 WebKit 合成层不刷新,而 video 元素能正常显示动画。
-					   所以直接用 video 作壁纸本体,并强制独立合成层(translateZ(0)),
+					/* video 直接作为壁纸本体;translateZ(0) 强制独立合成层,
 					   避免 Retina 缩放下出现"半尺寸重复投射"的副本。 */
 					video.style.opacity = '1'
 					video.style.transform = 'translateZ(0)'
@@ -450,11 +445,7 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						window.removeEventListener('resize', sizeWallpaper)
 						document.removeEventListener('visibilitychange', sizeWallpaper)
 					})
-					const canvas = null
-					const cctx = null
-					const drawErr = 'canvas-disabled'
 					wtStore.videoEl = video
-					wtStore.mediaWrap = wrap
 
 					function tryPlay() {
 						try {
@@ -520,7 +511,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						try { video.removeAttribute('src') } catch (err) {}
 						try { wrap.remove() } catch (err) {}
 						wtStore.videoEl = null
-						wtStore.mediaWrap = null
 					})
 				}
 
@@ -548,17 +538,6 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 			})
 
 			console.log('[dsh-theme-wanderer] v' + THEME_VERSION + ' 已挂载: 液态玻璃 + 动态壁纸')
-			;(function bootCheck() {
-				/* 一次性挂载回执: 只发一条,便于确认前端已挂载且壁纸在播;不做周期上报 */
-				window.setTimeout(function () {
-					try {
-						const v = wtStore.videoEl
-						const state = v ? (v.error ? 'error' + v.error.code : (v.paused ? 'paused' : 'playing')) : 'none'
-						fetch('/wanderer-theme/clientlog?' + encodeURIComponent('mount v' + THEME_VERSION + ' video=' + state), { cache: 'no-store' }).catch(function () {})
-					} catch (err) {}
-				}, 3500)
-			})()
-
 			/* ===== 基础形状 ===== */
 			function starPoints(x, y, r, rot) {
 				const pts = []
