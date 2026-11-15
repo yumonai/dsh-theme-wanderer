@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({ id: "dsh-theme-wanderer", factory: (require) => {
 
 		const name = "dsh-theme-wanderer"
 		const inject = ["slots", "theme"]
-		const THEME_VERSION = '3.6.0'
+		const THEME_VERSION = '3.7.0'
 
 		function apply(ctx) {
 			const TOKENS = {
@@ -77,11 +77,16 @@ body::before {
   position: fixed; inset: 0; z-index: -3; pointer-events: none;
   background: url("/wanderer-theme/wallpaper") center top / cover no-repeat;
 }
-.wt-bgmedia { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; background: transparent; }
+/* 应用根节点自建层叠上下文,壁纸层作为它的负 z-index 子层:
+   既不会被 body{isolation:isolate} 的背景压住,也不会盖住界面内容 */
+#root { position: relative; z-index: 0; }
+.wt-bgmedia { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: transparent; }
+body > .wt-bgmedia { position: fixed; z-index: -2; }
+.wt-bgposter { position: absolute; inset: 0; background: url("/wanderer-theme/wallpaper") center top / cover no-repeat; }
 .wt-bgvideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .wt-bgscrim { position: absolute; inset: 0; background: radial-gradient(120% 100% at 50% 45%, rgba(8, 14, 26, 0) 55%, rgba(8, 14, 26, 0.22) 100%); }
 body:not([data-ds-dark-theme]) .wt-bgscrim { background: radial-gradient(120% 100% at 50% 45%, rgba(245, 249, 255, 0) 55%, rgba(240, 246, 252, 0.14) 100%); }
-body.wt-video-off .wt-bgmedia { display: none; }
+body.wt-video-off .wt-bgvideo, body.wt-video-off .wt-bgcanvas { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .wt-bgvideo { display: none; } }
 
 /* ===== 壁纸置顶(诊断): 把背景层提到最上层,用于判断是否被应用层遮挡 ===== */
@@ -349,9 +354,15 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 					video.appendChild(source)
 					const scrim = document.createElement('div')
 					scrim.className = 'wt-bgscrim'
+					const poster = document.createElement('div')
+					poster.className = 'wt-bgposter'
+					wrap.appendChild(poster)
 					wrap.appendChild(video)
 					wrap.appendChild(scrim)
-					document.body.appendChild(wrap)
+					/* 优先挂进应用根节点(#root),使其成为根节点内的负 z-index 子层;
+					   没有 #root 时退回 body */
+					const mount = document.getElementById('root')
+					if (mount) { mount.insertBefore(wrap, mount.firstChild) } else { document.body.appendChild(wrap) }
 					/* Canvas 逐帧绘制: 视频层在某些 WebKit/合成场景下会被冻结或遮挡,
 					   把解码帧画到普通 canvas 上可稳定显示; 视频本身隐藏但继续解码 */
 					const canvas = document.createElement('canvas')
@@ -389,6 +400,24 @@ body[data-ds-dark-theme] .wt-copy-text { color: rgba(169, 189, 210, 0.75); }
 						rafId = window.requestAnimationFrame(drawFrame)
 					} catch (err) { drawErr = String(err) }
 					disposers.push(function () { try { window.cancelAnimationFrame(rafId) } catch (err) {} })
+					/* 窗口尺寸变化/从最小化恢复时重新校正画布,避免出现 0x0 的空画布 */
+					const onResize = function () {
+						try {
+							const dpr = Math.min(window.devicePixelRatio || 1, 2)
+							const w = window.innerWidth || 1440
+							const h = window.innerHeight || 900
+							wrap.style.width = '100%'
+							wrap.style.height = '100%'
+							canvas.width = Math.round(w * dpr)
+							canvas.height = Math.round(h * dpr)
+						} catch (err) {}
+					}
+					window.addEventListener('resize', onResize)
+					document.addEventListener('visibilitychange', onResize)
+					disposers.push(function () {
+						window.removeEventListener('resize', onResize)
+						document.removeEventListener('visibilitychange', onResize)
+					})
 
 					wtStore.videoEl = video
 					wtStore.mediaWrap = wrap
